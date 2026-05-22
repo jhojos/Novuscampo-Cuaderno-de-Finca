@@ -1,0 +1,1685 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Cuaderno de Finca · Novuscampo</title>
+  <meta name="description" content="Tu cuaderno de finca en el teléfono. Lleva tu rebaño al día — vacunas, partos, pesos e inventario.">
+  <meta name="theme-color" content="#8b3a2c">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="apple-touch-icon" href="icon-192.png">
+
+  <!-- Google Fonts: Newsreader, DM Sans, JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,500;1,400;1,500&family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <!-- React + Babel desde CDN (sin build step, igual que el marketplace) -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+/* ============================================================
+   Novuscampo — Cuaderno de Finca
+   Sistema de diseño idéntico al marketplace.
+   "Editorial · sobrio · llanero. Papel, tinta, terracota."
+   ============================================================ */
+
+:root {
+  /* Superficies (papel) */
+  --paper: #f4ecdb;
+  --paper-2: #ece1c6;
+  --paper-3: #e2d5b3;
+  --paper-card: #fbf6ea;
+  /* Tinta */
+  --ink: #1c1814;
+  --ink-1: #3a3127;
+  --ink-2: #6b5f4e;
+  --ink-3: #968a76;
+  --ink-4: #b8ad97;
+  /* Líneas */
+  --rule: #d4c6a4;
+  --rule-soft: #e1d4b3;
+  /* Marca */
+  --terra: #8b3a2c;
+  --terra-deep: #5e2719;
+  --terra-tint: #d8a99c;
+  --terra-wash: #f3dcd2;
+  /* Semánticos */
+  --olive: #5a6440;
+  --olive-wash: #d8dcc1;
+  --amber: #a67220;
+  --amber-wash: #f0e1bf;
+  --crimson: #8a2a26;
+  --crimson-wash: #f0d8d4;
+  /* Tipografía */
+  --serif: "Newsreader", "Source Serif 4", Georgia, serif;
+  --sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SF Mono", monospace;
+  /* Radios */
+  --r-xs: 4px;
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  margin: 0; padding: 0;
+  height: 100%;
+  background: var(--paper);
+  overscroll-behavior: none;
+}
+
+#root { height: 100%; }
+
+body {
+  font-family: var(--sans);
+  color: var(--ink);
+  /* Cuerpo 16px+ por reglas de campo (pleno sol, baja alfabetización) */
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---- Tipografía base ---- */
+.cf-h1 { font-family: var(--serif); font-weight: 500; font-size: 28px; line-height: 1.1; letter-spacing: -0.01em; color: var(--ink); margin: 0; }
+.cf-h2 { font-family: var(--serif); font-weight: 500; font-size: 22px; line-height: 1.15; color: var(--ink); margin: 0; }
+.cf-eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-2); }
+.cf-body { font-family: var(--sans); font-size: 16px; line-height: 1.5; color: var(--ink-1); }
+.cf-meta { font-family: var(--mono); font-size: 12px; color: var(--ink-2); letter-spacing: 0.02em; }
+.cf-num { font-family: var(--mono); font-feature-settings: "tnum"; }
+.cf-wordmark { font-family: var(--serif); font-weight: 500; font-style: italic; letter-spacing: -0.01em; }
+
+/* ---- Botones (mínimo 60px alto por reglas de campo) ---- */
+.cf-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  width: 100%; min-height: 60px; padding: 0 20px;
+  background: var(--terra); color: var(--paper);
+  border: none; cursor: pointer;
+  font-family: var(--sans); font-weight: 600; font-size: 18px;
+  border-radius: var(--r-sm); letter-spacing: 0.01em;
+}
+.cf-btn:active { opacity: 0.85; }
+.cf-btn--ink { background: var(--ink); }
+.cf-btn--ghost { background: transparent; color: var(--ink); border: 1.5px solid var(--rule); }
+.cf-btn--olive { background: var(--olive); }
+.cf-btn--crimson { background: var(--crimson); }
+.cf-btn--sm { min-height: 48px; font-size: 16px; width: auto; padding: 0 16px; }
+
+/* ---- Inputs (altos, legibles) ---- */
+.cf-input, .cf-select, .cf-textarea {
+  width: 100%; min-height: 56px; padding: 0 16px;
+  background: var(--paper-card); border: 1.5px solid var(--rule);
+  border-radius: var(--r-sm);
+  font-family: var(--sans); font-size: 18px; color: var(--ink);
+  box-sizing: border-box;
+}
+.cf-textarea { padding: 14px 16px; min-height: 90px; line-height: 1.5; resize: vertical; }
+.cf-input:focus, .cf-select:focus, .cf-textarea:focus { outline: none; border-color: var(--terra); }
+.cf-input::placeholder, .cf-textarea::placeholder { color: var(--ink-3); }
+.cf-label { font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-2); display: block; margin-bottom: 8px; }
+
+/* ---- Tarjetas ---- */
+.cf-card { background: var(--paper-card); border: 1px solid var(--rule-soft); border-radius: var(--r-md); }
+
+/* ---- Chips de estado ---- */
+.cf-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  height: 26px; padding: 0 10px; border-radius: 999px;
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.04em;
+  white-space: nowrap; font-weight: 500;
+}
+.cf-chip--olive { background: var(--olive-wash); color: var(--olive); }
+.cf-chip--amber { background: var(--amber-wash); color: var(--amber); }
+.cf-chip--crimson { background: var(--crimson-wash); color: var(--crimson); }
+.cf-chip--terra { background: var(--terra-wash); color: var(--terra-deep); }
+.cf-chip--ink { background: var(--paper-2); color: var(--ink-2); }
+
+/* ---- Marca / monograma ---- */
+.cf-mark { display: inline-flex; align-items: center; justify-content: center; background: var(--terra); color: var(--paper); font-family: var(--serif); font-style: italic; font-weight: 500; border-radius: 3px; letter-spacing: -0.02em; overflow: hidden; }
+.cf-mark img { width: 100%; height: 100%; object-fit: cover; }
+
+/* ---- Separador rombo ---- */
+.cf-diamond { color: var(--terra); }
+
+/* ---- Líneas ---- */
+.cf-rule { height: 1px; background: var(--rule-soft); width: 100%; border: none; margin: 0; }
+.cf-rule-dashed { height: 0; border: none; border-top: 1px dashed var(--rule); width: 100%; }
+
+/* ---- Textura newsprint para cabeceras ---- */
+.cf-newsprint {
+  background-color: var(--paper);
+  background-image: repeating-linear-gradient(0deg, transparent 0 3px, rgba(28,24,20,0.012) 3px 4px);
+}
+
+/* ---- Placeholder rayado ---- */
+.cf-ph {
+  background-color: var(--paper-2);
+  background-image: repeating-linear-gradient(135deg, var(--paper-2) 0 6px, var(--paper-3) 6px 7px);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--ink-3); font-family: var(--mono); font-size: 11px;
+  letter-spacing: 0.1em; text-transform: uppercase;
+}
+
+/* ============================================================
+   LAYOUT — phone shell mobile-first
+   ============================================================ */
+.cf-app {
+  max-width: 460px; margin: 0 auto;
+  height: 100%; position: relative;
+  display: flex; flex-direction: column;
+  background: var(--paper);
+  overflow: hidden;
+}
+
+/* Cabecera */
+.cf-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: calc(env(safe-area-inset-top, 0px) + 14px) 18px 12px;
+  border-bottom: 1px solid var(--rule);
+  background: var(--paper);
+  flex-shrink: 0;
+}
+.cf-header-brand { display: inline-flex; align-items: center; gap: 8px; }
+
+/* Área scrolleable */
+.cf-scroll {
+  flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+}
+.cf-scroll::-webkit-scrollbar { width: 0; }
+.cf-scroll { scrollbar-width: none; }
+
+/* Barra de navegación inferior */
+.cf-tabbar {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  display: flex; align-items: stretch;
+  background: var(--paper-card);
+  border-top: 1px solid var(--rule);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  flex-shrink: 0;
+}
+.cf-tab {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 3px; min-height: 64px; padding: 8px 4px;
+  background: transparent; border: none; cursor: pointer;
+  font-family: var(--sans); font-size: 11px; color: var(--ink-3);
+}
+.cf-tab.active { color: var(--terra); }
+.cf-tab svg { width: 22px; height: 22px; }
+
+/* Estado vacío */
+.cf-empty {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  text-align: center; padding: 48px 32px; gap: 14px; color: var(--ink-3);
+}
+
+/* Modal / hoja inferior */
+.cf-sheet-backdrop {
+  position: fixed; inset: 0; background: rgba(28,24,20,0.5);
+  display: flex; align-items: flex-end; justify-content: center;
+  z-index: 100;
+}
+.cf-sheet {
+  width: 100%; max-width: 460px; max-height: 92%;
+  background: var(--paper); border-radius: var(--r-lg) var(--r-lg) 0 0;
+  display: flex; flex-direction: column;
+  animation: cf-slide-up 0.22s ease;
+}
+@keyframes cf-slide-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.cf-sheet-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 18px 12px; border-bottom: 1px solid var(--rule); flex-shrink: 0;
+}
+.cf-sheet-body { padding: 18px; overflow-y: auto; flex: 1; }
+
+/* Toast de éxito */
+.cf-toast {
+  position: fixed; left: 50%; bottom: calc(90px + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  background: var(--olive); color: var(--paper);
+  padding: 12px 20px; border-radius: 999px;
+  font-family: var(--sans); font-size: 15px; font-weight: 500;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.18); z-index: 200;
+  display: inline-flex; align-items: center; gap: 8px;
+  animation: cf-toast-in 0.2s ease;
+}
+@keyframes cf-toast-in { from { opacity: 0; transform: translate(-50%, 10px); } to { opacity: 1; transform: translate(-50%, 0); } }
+
+/* Fila de dato (un dato por línea) */
+.cf-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 0; border-bottom: 1px solid var(--rule-soft); gap: 12px;
+}
+.cf-row:last-child { border-bottom: none; }
+
+/* Aviso de versión de prueba */
+.cf-notice {
+  background: var(--amber-wash); border: 1px solid var(--amber);
+  border-radius: var(--r-sm); padding: 12px 14px;
+  font-family: var(--sans); font-size: 14px; color: var(--ink-1); line-height: 1.45;
+}
+
+/* Pill segmentado para tipos */
+.cf-seg { display: flex; flex-wrap: wrap; gap: 8px; }
+.cf-seg-opt {
+  flex: 1; min-width: 80px; min-height: 52px; padding: 8px 12px;
+  background: var(--paper-card); border: 1.5px solid var(--rule);
+  border-radius: var(--r-sm); cursor: pointer;
+  font-family: var(--sans); font-size: 15px; color: var(--ink-1);
+  display: inline-flex; align-items: center; justify-content: center; text-align: center;
+}
+.cf-seg-opt.active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <!-- Logo del toro Novuscampo embebido (disponible vía window.__cuadernoLogo) -->
+  <script>
+    window.__cuadernoLogo = 'data:image/jpeg;base64,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hghY2KNjG7NjY0ANaAOwAAAA8gm7rRqeVq1Fdk0+qMFmtePGDHaS0PrbteXsaBU1z3hlLRxHu4sjE0sjttm80Td93FXarQwyz5UciyPMcsuc3/KcraKzWlrvzFttsLjyuIHR1RO8mWR31W+FGOjDvd6Za32Jv3ERFkEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERARedklzuVmx65XezY7VX+vo6Z81NaqWaOGatkHaJj5CGNcfIuICxBzr0k0Ol2QOxjUjhi1Bxy48nisguFbSxmSPfbnY7Yte3fpu0kbrWOFy8JbIzPRYg6Q+kv0k1V1FtGnVZht6xSW9yGmo7hca2CWmNSf4uF/JsWF59lrj05uUHbfdZfbEdCCD8CNimWNx8ksoiK0tTcxyrCMeZecR0uvOe1hqGxPtlprKennZGWuJlBnc1rgC0DlHtHmGw6FSTfZV2osJsj9KHi2G3mqxvMeHvOrLd6B3JVUVfW00M0Ltt/aa4AjpsQexHUHZTjojxBZnrNVUlXNw5ZriON11M+pgv16q6VsMgDd4wyEETPD/Jwby+e+y1ePKTdSZSpoREWFEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQFh16VGw2qu4aKTIqmiifcbLk1C2iqSNnwsnbIyZoP6LmtbuO27GnyWYqxH9KOxzuFCsdv0GR2vf/xl04/zxMvDUjXWm5WO4TW+9UVRRV1JJyTQTNMcsTxsdiO4PYj7iPJbduAfi0GvWGHAc1r+fPcXpm+LLK4c93oW7NbVD4ys6Nl+fK/652j/AI5eER2qOmdk1u03tgdlVhx+iN6o6dm77tQR00f5xoHvTwt3283xgt7tYDrhwDUPK9LMwtOeYNdTQ3my1Damlnb1afJzHj68b2ktc09HNcQvRZOWdmJ+F+g5FGHDlr3i/EdpjQ6hY41tLUb+q3e2l/NJbq1rQXxO8y078zHfWYQe+4EnryWWXVdGAvH7gNkyPii4fJ62hif+UNyjs9y3aNqinir6ZzGvHmAJ5G9fJ2yz7JLjuVhhxujl4k+F47+9lT/71RLM5bz/ACxJ7iIASQANyegChTVjjI4fNHbrJjWR5m+6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p5kbtIrBhloxfIYq+shjr6WStkYGODpCYWtb4bR0DAS5xdvsAFkQixlwzK22+df2deH/AJDk4MJhjJ23q9+2/Pvr+y3dQ8LotRMEvmC3Cd1PT3qjdSmZo3MLtwWPA8+VzWnbz22UaUtw4oaSwQ4BJgWNmvgpm28ZZ9NNNL4QbyCoNLy+KZeXrydAXDrsN1NqLWfFMr1bsrnw+qvDh9O4zKb3N77Xx21Z9/bsjbhywa/6caO2TDcpgbDdKGSrdMxszZW7SVEj2nmadiS1wJ+G+3krcyrT/NMN1JvOo+n+D2DM6HKo4XXez3KSKnqKeqiZyNnp5pWObs5u3Mw7dfuImxEvFj0zH4Wet5PrZ81kvVvc9ru7/wA/4WHplDnk0txumbafYrijJfDZb6S1vZPVtZ18T1iZjWsIJ5dmt7bHffovl1Rwe+ZXmWmN7tFLHNTYvkj7lcXPmawxwGnczmaD1eeYjoOqkZFbxy49NYnqsseX6uEk8zXt3mlWuLHBzTsWncfJQTRYpq9oxlOSy6c4lbszxTKLlLemUL7oy31drrJdvGaHSAskicRuPMf751RM+OZ6vixOD1GXBuall8y//Wqi/SvT3LKHLsk1Z1IFBDk2TxU9Ey30EpmgtlDDv4cIlP8AGPJO7nDp8O5UoIiuGMwmozz82XPn15f28STxBERacRERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERB//Z';
+  </script>
+  <script type="text/babel" data-presets="react">
+/* ============================================================
+   PERSISTENCIA — todo vive en el teléfono (localStorage)
+   No hay servidor. No hay nube. No hay cuentas con contraseña.
+   ============================================================ */
+
+const STORAGE_KEY = 'novuscampo_cuaderno_v1';
+
+// Lee todo el cuaderno desde localStorage. Si no existe, devuelve estructura vacía.
+function leerCuaderno() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return estructuraVacia();
+    const data = JSON.parse(raw);
+    // Garantiza que todas las colecciones existan aunque falten en datos viejos
+    return { ...estructuraVacia(), ...data };
+  } catch (e) {
+    // Si los datos están corruptos, no se pierde la app: arranca vacía.
+    return estructuraVacia();
+  }
+}
+
+// Estructura inicial del cuaderno — todas las listas arrancan vacías.
+function estructuraVacia() {
+  return {
+    finca: null,           // { productor, finca, estado } — null hasta que registre
+    animales: [],          // { id, chapeta, sexo, raza, edad, peso, estado, nota, eventos: [] }
+    pendientes: [],        // { id, texto, fecha, hecho }
+    sanidad: [],           // { id, nombre, tipo, cantidad, vence }
+    inventario: [],        // { id, nombre, cantidad, unidad, umbral }
+    potreros: [],          // { id, nombre, estado, dias }
+  };
+}
+
+// Hook propio: estado React + persistencia automática en localStorage.
+// Cada vez que cambia el estado, se guarda. Al abrir la app, se lee.
+function useCuaderno() {
+  const [data, setData] = React.useState(leerCuaderno);
+
+  // Guarda en el teléfono cada vez que 'data' cambia.
+  React.useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    } catch (e) {
+      // Si el almacenamiento está lleno o bloqueado, avisamos por consola.
+      // En la práctica, los volúmenes de un cuaderno son pequeños.
+    }
+  }, [data]);
+
+  return [data, setData];
+}
+
+// Genera un id único simple (suficiente para uso local en un teléfono).
+function nuevoId() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+}
+
+/* ============================================================
+   HELPERS DE FECHA — todo en español, formato venezolano simple
+   ============================================================ */
+
+// Fecha de hoy a medianoche (para comparar vencimientos sin la hora).
+function hoy() {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+// Convierte "2026-05-20" a un objeto Date a medianoche local.
+function aFecha(iso) {
+  if (!iso) return null;
+  const [a, m, d] = iso.split('-').map(Number);
+  return new Date(a, m - 1, d);
+}
+
+// Días desde hoy hasta la fecha dada (negativo = ya pasó).
+function diasHasta(iso) {
+  const f = aFecha(iso);
+  if (!f) return null;
+  return Math.round((f - hoy()) / 86400000);
+}
+
+// Texto amable de cuándo vence/venció algo.
+function textoVencimiento(iso) {
+  const d = diasHasta(iso);
+  if (d === null) return '';
+  if (d < 0) return `venció hace ${Math.abs(d)} ${Math.abs(d) === 1 ? 'día' : 'días'}`;
+  if (d === 0) return 'vence hoy';
+  if (d === 1) return 'vence mañana';
+  if (d <= 30) return `vence en ${d} días`;
+  return `vence ${formatoFechaCorta(iso)}`;
+}
+
+// "2026-05-20" → "20 may"
+function formatoFechaCorta(iso) {
+  const f = aFecha(iso);
+  if (!f) return '';
+  const meses = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  return `${f.getDate()} ${meses[f.getMonth()]}`;
+}
+
+// Fecha de hoy en formato ISO (para prellenar inputs date).
+function hoyISO() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+  </script>
+  <script type="text/babel" data-presets="react">
+/* ============================================================
+   COMPONENTES COMPARTIDOS — marca, íconos, UI reutilizable
+   ============================================================ */
+
+// Monograma de marca (toro Novuscampo). Reutiliza el logo real.
+function Marca({ size = 30 }) {
+  const logo = window.__cuadernoLogo;
+  return (
+    <span className="cf-mark" style={{ width: size, height: size, fontSize: size * 0.4 }}>
+      {logo ? <img src={logo} alt="Novuscampo" /> : 'nc'}
+    </span>
+  );
+}
+
+// Cabecera de la app: toro + "Novuscampo" itálico + acción opcional a la derecha.
+function Cabecera({ titulo, accion }) {
+  return (
+    <header className="cf-header cf-newsprint">
+      <div className="cf-header-brand">
+        <Marca size={28} />
+        <span className="cf-wordmark" style={{ fontSize: 19 }}>{titulo || 'Novuscampo'}</span>
+      </div>
+      {accion}
+    </header>
+  );
+}
+
+// Íconos de la barra inferior (línea simple, estilo sobrio).
+const Iconos = {
+  inicio: (a) => <svg viewBox="0 0 24 24" fill="none"><path d="M3 11l9-7 9 7M5 10v9a1 1 0 001 1h12a1 1 0 001-1v-9" stroke="currentColor" strokeWidth={a ? 2 : 1.6} strokeLinecap="round" strokeLinejoin="round"/></svg>,
+  rebano: (a) => <svg viewBox="0 0 24 24" fill="none"><path d="M4 9c0-1 1-2 2-2m12 2c0-1-1-2-2-2M5 9c-1 1-1.5 3-1 5m15-5c1 1 1.5 3 1 5M7 7c0-2 2-3 5-3s5 1 5 3M8 18c0 1 1.5 2 4 2s4-1 4-2" stroke="currentColor" strokeWidth={a ? 2 : 1.6} strokeLinecap="round" strokeLinejoin="round"/><circle cx="9.5" cy="11" r="1" fill="currentColor"/><circle cx="14.5" cy="11" r="1" fill="currentColor"/></svg>,
+  anotar: (a) => <svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth={a ? 2.4 : 2} strokeLinecap="round"/></svg>,
+  pendientes: (a) => <svg viewBox="0 0 24 24" fill="none"><path d="M9 6h11M9 12h11M9 18h11M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2" stroke="currentColor" strokeWidth={a ? 2 : 1.6} strokeLinecap="round" strokeLinejoin="round"/></svg>,
+  mas: (a) => <svg viewBox="0 0 24 24" fill="none"><circle cx="5" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="19" cy="12" r="1.6" fill="currentColor"/></svg>,
+};
+
+// Barra de navegación inferior — 5 botones máximo.
+function BarraNav({ activa, onCambiar }) {
+  const tabs = [
+    { id: 'inicio', label: 'Inicio' },
+    { id: 'rebano', label: 'Rebaño' },
+    { id: 'anotar', label: 'Anotar' },
+    { id: 'pendientes', label: 'Pendientes' },
+    { id: 'mas', label: 'Más' },
+  ];
+  return (
+    <nav className="cf-tabbar">
+      {tabs.map(t => (
+        <button key={t.id}
+          className={'cf-tab' + (activa === t.id ? ' active' : '')}
+          onClick={() => onCambiar(t.id)}>
+          {Iconos[t.id](activa === t.id)}
+          <span>{t.label}</span>
+        </button>
+      ))}
+    </nav>
+  );
+}
+
+// Hoja inferior (bottom sheet) para formularios.
+function Hoja({ titulo, onCerrar, children }) {
+  return (
+    <div className="cf-sheet-backdrop" onClick={onCerrar}>
+      <div className="cf-sheet" onClick={e => e.stopPropagation()}>
+        <div className="cf-sheet-head">
+          <span className="cf-h2">{titulo}</span>
+          <button onClick={onCerrar} style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 8 }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="var(--ink-2)" strokeWidth="2" strokeLinecap="round"/></svg>
+          </button>
+        </div>
+        <div className="cf-sheet-body">{children}</div>
+      </div>
+    </div>
+  );
+}
+
+// Toast de éxito ("Listo, se guardó").
+function Toast({ texto }) {
+  return (
+    <div className="cf-toast">
+      <svg width="16" height="16" viewBox="0 0 16 16"><path d="M3 8l3 3 7-8" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>
+      {texto}
+    </div>
+  );
+}
+
+// Estado vacío amable — nunca pantalla en blanco.
+function Vacio({ icono, titulo, texto }) {
+  return (
+    <div className="cf-empty">
+      <div style={{ width: 56, height: 56, borderRadius: 999, background: 'var(--paper-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink-3)' }}>
+        {icono}
+      </div>
+      <div className="cf-h2" style={{ color: 'var(--ink-1)' }}>{titulo}</div>
+      <p className="cf-body" style={{ margin: 0, maxWidth: 280, color: 'var(--ink-2)' }}>{texto}</p>
+    </div>
+  );
+}
+
+// Diálogo de confirmación para acciones destructivas.
+function Confirmar({ titulo, texto, onSi, onNo, textoSi = 'Sí, borrar' }) {
+  return (
+    <div className="cf-sheet-backdrop" onClick={onNo}>
+      <div className="cf-card" onClick={e => e.stopPropagation()} style={{ width: '88%', maxWidth: 360, padding: 22 }}>
+        <div className="cf-h2" style={{ marginBottom: 10 }}>{titulo}</div>
+        <p className="cf-body" style={{ marginTop: 0, marginBottom: 20, color: 'var(--ink-2)' }}>{texto}</p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <button className="cf-btn cf-btn--crimson" onClick={onSi}>{textoSi}</button>
+          <button className="cf-btn cf-btn--ghost" onClick={onNo}>Cancelar</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Campo de formulario: etiqueta + control, un dato por línea.
+function Campo({ label, children }) {
+  return (
+    <div style={{ marginBottom: 18 }}>
+      <label className="cf-label">{label}</label>
+      {children}
+    </div>
+  );
+}
+  </script>
+  <script type="text/babel" data-presets="react">
+/* ============================================================
+   ONBOARDING — bienvenida + registro mínimo (sin cuentas)
+   ============================================================ */
+
+// Pantalla de bienvenida de marca. Primera vez que se abre la app.
+function Bienvenida({ onEmpezar }) {
+  return (
+    <div className="cf-app">
+      <div className="cf-scroll" style={{ paddingBottom: 24, display: 'flex', flexDirection: 'column' }}>
+        {/* Marca grande sobre textura */}
+        <div className="cf-newsprint" style={{ padding: '56px 28px 32px', textAlign: 'center', borderBottom: '1px solid var(--rule)' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 18 }}>
+            <Marca size={84} />
+          </div>
+          <div className="cf-wordmark" style={{ fontSize: 34, marginBottom: 4 }}>Novuscampo</div>
+          <div className="cf-eyebrow">Cuaderno de finca</div>
+        </div>
+
+        {/* Propuesta en lenguaje de productor */}
+        <div style={{ padding: '32px 28px 0' }}>
+          <h1 className="cf-h1" style={{ fontSize: 26, marginBottom: 28, lineHeight: 1.2 }}>
+            Tu cuaderno de finca, <em style={{ color: 'var(--terra)' }}>en el teléfono</em>.
+          </h1>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 20, marginBottom: 32 }}>
+            {[
+              { ic: <path d="M4 9c0-1 1-2 2-2m12 2c0-1-1-2-2-2M7 7c0-2 2-3 5-3s5 1 5 3M8 18c0 1 1.5 2 4 2s4-1 4-2" stroke="var(--terra)" strokeWidth="1.8" strokeLinecap="round" fill="none"/>, t: 'Lleva tu rebaño al día' },
+              { ic: <path d="M5 4h11l3 3v13H5zM9 11l2 2 4-4" stroke="var(--terra)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill="none"/>, t: 'No olvides vacunas ni partos' },
+              { ic: <path d="M4 7h16M4 12h16M4 17h10" stroke="var(--terra)" strokeWidth="1.8" strokeLinecap="round" fill="none"/>, t: 'Sabe qué te falta en la finca' },
+            ].map((p, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                <div style={{ width: 46, height: 46, borderRadius: 10, background: 'var(--terra-wash)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <svg width="24" height="24" viewBox="0 0 24 24">{p.ic}</svg>
+                </div>
+                <span className="cf-body" style={{ fontSize: 18, color: 'var(--ink-1)' }}>{p.t}</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="cf-notice" style={{ marginBottom: 24 }}>
+            Versión de prueba. Tus datos se guardan solo en este teléfono.
+          </div>
+        </div>
+      </div>
+
+      {/* Botón fijo abajo */}
+      <div style={{ padding: '12px 28px calc(20px + env(safe-area-inset-bottom, 0px))', borderTop: '1px solid var(--rule)', background: 'var(--paper)' }}>
+        <button className="cf-btn" onClick={onEmpezar}>Empezar</button>
+      </div>
+    </div>
+  );
+}
+
+// Registro mínimo: nombre del productor + finca + estado. Sin correo ni contraseña.
+function Registro({ onCrear }) {
+  const [productor, setProductor] = React.useState('');
+  const [finca, setFinca] = React.useState('');
+  const [estado, setEstado] = React.useState('');
+
+  const estados = ['Apure', 'Barinas', 'Guárico', 'Cojedes', 'Portuguesa', 'Zulia', 'Lara', 'Monagas', 'Anzoátegui', 'Táchira', 'Mérida', 'Trujillo', 'Falcón', 'Yaracuy', 'Carabobo', 'Bolívar', 'Otro'];
+
+  const puedeCrear = productor.trim() && finca.trim() && estado;
+
+  return (
+    <div className="cf-app">
+      <Cabecera titulo="Novuscampo" />
+      <div className="cf-scroll" style={{ padding: '24px 22px 0' }}>
+        <h1 className="cf-h1" style={{ marginBottom: 6 }}>Crea tu cuaderno</h1>
+        <p className="cf-body" style={{ marginTop: 0, marginBottom: 28, color: 'var(--ink-2)' }}>
+          Solo necesitamos tu nombre y el de tu finca. Nada más.
+        </p>
+
+        <Campo label="Tu nombre">
+          <input className="cf-input" value={productor} onChange={e => setProductor(e.target.value)}
+            placeholder="Ej: Eladio Romero" autoComplete="off" />
+        </Campo>
+
+        <Campo label="Nombre de la finca">
+          <input className="cf-input" value={finca} onChange={e => setFinca(e.target.value)}
+            placeholder="Ej: Hato La Candelaria" autoComplete="off" />
+        </Campo>
+
+        <Campo label="Estado / región">
+          <select className="cf-select" value={estado} onChange={e => setEstado(e.target.value)}>
+            <option value="">Seleccionar…</option>
+            {estados.map(e => <option key={e} value={e}>{e}</option>)}
+          </select>
+        </Campo>
+
+        <div className="cf-notice" style={{ marginTop: 8, marginBottom: 24 }}>
+          No pedimos correo ni contraseña: no hay cuentas. Tus datos se guardan en este teléfono.
+        </div>
+      </div>
+
+      <div style={{ padding: '12px 22px calc(20px + env(safe-area-inset-bottom, 0px))', borderTop: '1px solid var(--rule)', background: 'var(--paper)' }}>
+        <button className="cf-btn" disabled={!puedeCrear}
+          style={{ opacity: puedeCrear ? 1 : 0.5 }}
+          onClick={() => onCrear({ productor: productor.trim(), finca: finca.trim(), estado })}>
+          Crear mi cuaderno
+        </button>
+      </div>
+    </div>
+  );
+}
+  </script>
+  <script type="text/babel" data-presets="react">
+/* ============================================================
+   INICIO — saludo real + avisos generados de los datos del usuario
+   ============================================================ */
+
+// Genera los avisos del día a partir de los datos reales del cuaderno.
+// No son ejemplos quemados: salen de lo que el usuario cargó.
+function generarAvisos(data) {
+  const avisos = [];
+
+  // Sanidad por vencer (próximos 30 días) o vencida.
+  data.sanidad.forEach(s => {
+    const d = diasHasta(s.vence);
+    if (d !== null && d <= 30) {
+      avisos.push({
+        tipo: d < 0 ? 'crimson' : 'amber',
+        texto: `${s.nombre} ${textoVencimiento(s.vence)}`,
+        cat: 'Sanidad',
+      });
+    }
+  });
+
+  // Insumos en stock bajo.
+  data.inventario.forEach(i => {
+    const bajo = i.umbral != null
+      ? Number(i.cantidad) <= Number(i.umbral)
+      : i.stockBajo;
+    if (bajo) {
+      avisos.push({
+        tipo: 'amber',
+        texto: `${i.nombre}: queda poco (${i.cantidad} ${i.unidad || ''})`.trim(),
+        cat: 'Inventario',
+      });
+    }
+  });
+
+  // Pendientes vencidos.
+  data.pendientes.filter(p => !p.hecho).forEach(p => {
+    const d = diasHasta(p.fecha);
+    if (d !== null && d < 0) {
+      avisos.push({ tipo: 'crimson', texto: p.texto + ` (${textoVencimiento(p.fecha)})`, cat: 'Pendiente' });
+    } else if (d !== null && d <= 3) {
+      avisos.push({ tipo: 'amber', texto: p.texto + ` (${textoVencimiento(p.fecha)})`, cat: 'Pendiente' });
+    }
+  });
+
+  return avisos;
+}
+
+function PantallaInicio({ data, onIrA }) {
+  const avisos = generarAvisos(data);
+  const totalAnimales = data.animales.length;
+  const primerNombre = data.finca.productor.split(' ')[0];
+
+  return (
+    <React.Fragment>
+      <Cabecera titulo="Novuscampo" />
+      <div className="cf-scroll" style={{ padding: '20px 18px 0' }}>
+        {/* Saludo real */}
+        <div style={{ marginBottom: 6 }}>
+          <span className="cf-eyebrow">{data.finca.finca} · {data.finca.estado}</span>
+        </div>
+        <h1 className="cf-h1" style={{ marginBottom: 22 }}>Buenas, {primerNombre}</h1>
+
+        {/* Resumen del rebaño */}
+        <div className="cf-card" style={{ padding: 16, marginBottom: 22, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div>
+            <div className="cf-meta">Tu rebaño</div>
+            <div style={{ fontFamily: 'var(--serif)', fontSize: 28, marginTop: 2 }}>
+              <span className="cf-num">{totalAnimales}</span> {totalAnimales === 1 ? 'animal' : 'animales'}
+            </div>
+          </div>
+          <button className="cf-btn cf-btn--sm cf-btn--ghost" onClick={() => onIrA('rebano')}>
+            Ver rebaño
+          </button>
+        </div>
+
+        {/* Avisos del día generados de datos reales */}
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 12 }}>
+          <span className="cf-eyebrow">Avisos del día</span>
+          {avisos.length > 0 && <span className="cf-meta">{avisos.length}</span>}
+        </div>
+
+        {avisos.length === 0 ? (
+          <div className="cf-card" style={{ padding: 20, textAlign: 'center', marginBottom: 20 }}>
+            <span className="cf-body" style={{ color: 'var(--ink-2)' }}>
+              {totalAnimales === 0
+                ? 'Cuando registres tu rebaño y tus vacunas, aquí verás los avisos importantes.'
+                : 'Todo al día. No hay vencimientos ni pendientes urgentes.'}
+            </span>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
+            {avisos.map((a, i) => (
+              <div key={i} className="cf-card" style={{ padding: 14, display: 'flex', alignItems: 'center', gap: 12, borderLeft: `4px solid var(--${a.tipo})` }}>
+                <span style={{ width: 8, height: 8, borderRadius: 999, background: `var(--${a.tipo})`, flexShrink: 0 }} />
+                <div style={{ flex: 1 }}>
+                  <div className="cf-body" style={{ fontSize: 15 }}>{a.texto}</div>
+                  <div className="cf-meta" style={{ marginTop: 2, color: 'var(--ink-3)' }}>{a.cat}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Accesos rápidos */}
+        <span className="cf-eyebrow" style={{ display: 'block', marginBottom: 12 }}>Atajos</span>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 20 }}>
+          {[
+            { id: 'anotar', t: 'Anotar evento', s: 'vacuna, parto, peso…' },
+            { id: 'rebano', t: 'Agregar animal', s: 'nuevo en el rebaño' },
+            { id: 'pendientes', t: 'Pendientes', s: `${data.pendientes.filter(p => !p.hecho).length} sin hacer` },
+            { id: 'mas', t: 'Sanidad', s: `${data.sanidad.length} registros` },
+          ].map(a => (
+            <button key={a.id} className="cf-card" onClick={() => onIrA(a.id)}
+              style={{ padding: 16, textAlign: 'left', cursor: 'pointer', border: '1px solid var(--rule-soft)' }}>
+              <div className="cf-h2" style={{ fontSize: 17 }}>{a.t}</div>
+              <div className="cf-meta" style={{ marginTop: 4, color: 'var(--ink-3)' }}>{a.s}</div>
+            </button>
+          ))}
+        </div>
+      </div>
+    </React.Fragment>
+  );
+}
+  </script>
+  <script type="text/babel" data-presets="react">
+/* ============================================================
+   REBAÑO — CRUD real de animales + detalle con historial
+   ============================================================ */
+
+const RAZAS = ['Brahman', 'Carora', 'Senepol', 'Gyr', 'Girolando', 'Mestizo', 'Criollo', 'Otra'];
+const ESTADOS_ANIMAL = ['Sano', 'En tratamiento', 'Preñada', 'Lactando', 'Para venta'];
+const TIPOS_EVENTO = ['Vacuna', 'Peso', 'Parto', 'Enfermedad', 'Compra', 'Venta', 'Muerte'];
+
+function PantallaRebano({ data, setData, onAbrirAnimal }) {
+  const [form, setForm] = React.useState(null); // null = cerrado; objeto = editando/creando
+  const [toast, setToast] = React.useState('');
+
+  const mostrarToast = (t) => { setToast(t); setTimeout(() => setToast(''), 1800); };
+
+  const guardar = (animal) => {
+    setData(d => {
+      const existe = d.animales.find(a => a.id === animal.id);
+      const animales = existe
+        ? d.animales.map(a => a.id === animal.id ? animal : a)
+        : [...d.animales, animal];
+      return { ...d, animales };
+    });
+    setForm(null);
+    mostrarToast('Listo, se guardó');
+  };
+
+  return (
+    <React.Fragment>
+      <Cabecera titulo="Rebaño" accion={
+        <button className="cf-btn cf-btn--sm" style={{ width: 'auto' }}
+          onClick={() => setForm({ id: nuevoId(), chapeta: '', sexo: 'Hembra', raza: 'Brahman', edad: '', peso: '', estado: 'Sano', nota: '', eventos: [], nuevo: true })}>
+          + Agregar
+        </button>
+      } />
+      <div className="cf-scroll" style={{ padding: '18px 18px 0' }}>
+        {data.animales.length === 0 ? (
+          <Vacio
+            icono={<svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M7 7c0-2 2-3 5-3s5 1 5 3M8 18c0 1 1.5 2 4 2s4-1 4-2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/><circle cx="9.5" cy="11" r="1.2" fill="currentColor"/><circle cx="14.5" cy="11" r="1.2" fill="currentColor"/></svg>}
+            titulo="Aún no tienes animales"
+            texto="Toca + Agregar para registrar el primero de tu rebaño."
+          />
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div className="cf-meta" style={{ marginBottom: 2 }}>{data.animales.length} en el rebaño</div>
+            {data.animales.map(a => (
+              <button key={a.id} className="cf-card" onClick={() => onAbrirAnimal(a.id)}
+                style={{ padding: 14, display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', textAlign: 'left', border: '1px solid var(--rule-soft)' }}>
+                <div className="cf-ph" style={{ width: 52, height: 52, borderRadius: 'var(--r-sm)', flexShrink: 0 }}>
+                  {a.chapeta ? <span className="cf-num" style={{ fontSize: 13, color: 'var(--ink-2)' }}>{a.chapeta}</span> : ''}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span className="cf-num cf-meta" style={{ color: 'var(--ink-3)' }}>#{a.chapeta || '—'}</span>
+                    <EstadoChip estado={a.estado} />
+                  </div>
+                  <div style={{ fontFamily: 'var(--serif)', fontSize: 17, marginTop: 2 }}>{a.raza} · {a.sexo}</div>
+                  <div className="cf-meta" style={{ marginTop: 2, color: 'var(--ink-3)' }}>
+                    {a.edad && `${a.edad}`}{a.peso && ` · ${a.peso} kg`}{a.eventos.length > 0 && ` · ${a.eventos.length} eventos`}
+                  </div>
+                </div>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}><path d="M9 6l6 6-6 6" stroke="var(--ink-3)" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {form && <FormAnimal animal={form} onGuardar={guardar} onCerrar={() => setForm(null)} />}
+      {toast && <Toast texto={toast} />}
+    </React.Fragment>
+  );
+}
+
+// Chip de estado del animal con color semántico.
+function EstadoChip({ estado }) {
+  const map = {
+    'Sano': 'olive', 'En tratamiento': 'crimson', 'Preñada': 'terra',
+    'Lactando': 'amber', 'Para venta': 'ink',
+  };
+  return <span className={`cf-chip cf-chip--${map[estado] || 'ink'}`}>{estado}</span>;
+}
+
+// Formulario de animal (crear / editar).
+function FormAnimal({ animal, onGuardar, onCerrar }) {
+  const [a, setA] = React.useState(animal);
+  const set = (k, v) => setA(prev => ({ ...prev, [k]: v }));
+
+  return (
+    <Hoja titulo={animal.nuevo ? 'Agregar animal' : 'Editar animal'} onCerrar={onCerrar}>
+      <Campo label="Chapeta / número">
+        <input className="cf-input" value={a.chapeta} onChange={e => set('chapeta', e.target.value)}
+          placeholder="Ej: 247" inputMode="numeric" />
+      </Campo>
+
+      <Campo label="Sexo">
+        <div className="cf-seg">
+          {['Hembra', 'Macho'].map(s => (
+            <button key={s} className={'cf-seg-opt' + (a.sexo === s ? ' active' : '')} onClick={() => set('sexo', s)}>{s}</button>
+          ))}
+        </div>
+      </Campo>
+
+      <Campo label="Raza">
+        <select className="cf-select" value={a.raza} onChange={e => set('raza', e.target.value)}>
+          {RAZAS.map(r => <option key={r} value={r}>{r}</option>)}
+        </select>
+      </Campo>
+
+      <Campo label="Edad (aprox.)">
+        <input className="cf-input" value={a.edad} onChange={e => set('edad', e.target.value)}
+          placeholder="Ej: 2 años, 8 meses" />
+      </Campo>
+
+      <Campo label="Peso (kg)">
+        <input className="cf-input" value={a.peso} onChange={e => set('peso', e.target.value)}
+          placeholder="Ej: 320" inputMode="numeric" />
+      </Campo>
+
+      <Campo label="Estado">
+        <select className="cf-select" value={a.estado} onChange={e => set('estado', e.target.value)}>
+          {ESTADOS_ANIMAL.map(e => <option key={e} value={e}>{e}</option>)}
+        </select>
+      </Campo>
+
+      <Campo label="Nota (opcional)">
+        <textarea className="cf-textarea" value={a.nota} onChange={e => set('nota', e.target.value)}
+          placeholder="Cualquier detalle que quieras recordar" />
+      </Campo>
+
+      <button className="cf-btn" onClick={() => {
+        const limpio = { ...a }; delete limpio.nuevo;
+        onGuardar(limpio);
+      }}>Guardar</button>
+    </Hoja>
+  );
+}
+
+// Detalle del animal: ficha + historial de eventos + editar/borrar.
+function PantallaAnimal({ data, setData, animalId, onVolver }) {
+  const [confirmar, setConfirmar] = React.useState(false);
+  const [editar, setEditar] = React.useState(false);
+  const [toast, setToast] = React.useState('');
+  const animal = data.animales.find(a => a.id === animalId);
+
+  if (!animal) { onVolver(); return null; }
+
+  const mostrarToast = (t) => { setToast(t); setTimeout(() => setToast(''), 1800); };
+
+  const guardarEdit = (act) => {
+    setData(d => ({ ...d, animales: d.animales.map(a => a.id === act.id ? act : a) }));
+    setEditar(false);
+    mostrarToast('Listo, se guardó');
+  };
+
+  const borrar = () => {
+    setData(d => ({ ...d, animales: d.animales.filter(a => a.id !== animalId) }));
+    onVolver();
+  };
+
+  return (
+    <React.Fragment>
+      <header className="cf-header cf-newsprint">
+        <button onClick={onVolver} style={{ background: 'transparent', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, padding: 0 }}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="var(--ink)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          <span className="cf-body" style={{ fontWeight: 500 }}>Rebaño</span>
+        </button>
+        <button onClick={() => setEditar(true)} className="cf-meta" style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--terra)', textDecoration: 'underline' }}>Editar</button>
+      </header>
+
+      <div className="cf-scroll" style={{ padding: '20px 18px 0' }}>
+        {/* Ficha */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+          <span className="cf-num cf-eyebrow">#{animal.chapeta || '—'}</span>
+          <EstadoChip estado={animal.estado} />
+        </div>
+        <h1 className="cf-h1" style={{ marginBottom: 16 }}>{animal.raza} · {animal.sexo}</h1>
+
+        <div className="cf-card" style={{ padding: '4px 16px', marginBottom: 20 }}>
+          {[['Edad', animal.edad || '—'], ['Peso', animal.peso ? `${animal.peso} kg` : '—'], ['Estado', animal.estado]].map(([k, v]) => (
+            <div key={k} className="cf-row">
+              <span className="cf-meta">{k}</span>
+              <span className="cf-body" style={{ fontWeight: 500 }}>{v}</span>
+            </div>
+          ))}
+        </div>
+
+        {animal.nota && (
+          <div className="cf-card" style={{ padding: 14, marginBottom: 20, background: 'var(--paper-2)' }}>
+            <div className="cf-meta" style={{ marginBottom: 4 }}>Nota</div>
+            <p className="cf-body" style={{ margin: 0 }}>{animal.nota}</p>
+          </div>
+        )}
+
+        {/* Historial de eventos */}
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 12 }}>
+          <span className="cf-eyebrow">Historial</span>
+          <span className="cf-meta">{animal.eventos.length}</span>
+        </div>
+
+        {animal.eventos.length === 0 ? (
+          <div className="cf-card" style={{ padding: 18, textAlign: 'center', marginBottom: 20 }}>
+            <span className="cf-body" style={{ color: 'var(--ink-2)' }}>Sin eventos todavía. Usa "Anotar" para registrar vacunas, pesos o partos.</span>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>
+            {[...animal.eventos].reverse().map((ev, i) => (
+              <div key={i} className="cf-card" style={{ padding: 12, display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                <span className="cf-chip cf-chip--terra" style={{ flexShrink: 0 }}>{ev.tipo}</span>
+                <div style={{ flex: 1 }}>
+                  {ev.detalle && <div className="cf-body" style={{ fontSize: 15 }}>{ev.detalle}</div>}
+                  <div className="cf-meta" style={{ marginTop: 2, color: 'var(--ink-3)' }}>{formatoFechaCorta(ev.fecha)}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Borrar */}
+        <button className="cf-btn cf-btn--ghost" style={{ marginBottom: 24, color: 'var(--crimson)', borderColor: 'var(--crimson)' }}
+          onClick={() => setConfirmar(true)}>
+          Borrar este animal
+        </button>
+      </div>
+
+      {editar && <FormAnimal animal={animal} onGuardar={guardarEdit} onCerrar={() => setEditar(false)} />}
+      {confirmar && <Confirmar
+        titulo="¿Borrar este animal?"
+        texto="Se borrará del rebaño junto con su historial. Esto no se puede deshacer."
+        onSi={borrar} onNo={() => setConfirmar(false)} />}
+      {toast && <Toast texto={toast} />}
+    </React.Fragment>
+  );
+}
+  </script>
+  <script type="text/babel" data-presets="react">
+/* ============================================================
+   ANOTAR — registrar un evento real asociado a un animal
+   ============================================================ */
+
+function PantallaAnotar({ data, setData, onIrA }) {
+  const [tipo, setTipo] = React.useState('Vacuna');
+  const [animalId, setAnimalId] = React.useState('');
+  const [detalle, setDetalle] = React.useState('');
+  const [fecha, setFecha] = React.useState(hoyISO());
+  const [toast, setToast] = React.useState('');
+
+  const sinAnimales = data.animales.length === 0;
+  const puedeGuardar = animalId && tipo;
+
+  const guardar = () => {
+    const evento = { tipo, detalle: detalle.trim(), fecha };
+    setData(d => ({
+      ...d,
+      animales: d.animales.map(a =>
+        a.id === animalId ? { ...a, eventos: [...a.eventos, evento] } : a
+      ),
+    }));
+    // Algunos eventos cambian el estado del animal automáticamente.
+    if (tipo === 'Enfermedad') ajustarEstado(animalId, 'En tratamiento');
+    if (tipo === 'Parto') ajustarEstado(animalId, 'Lactando');
+    if (tipo === 'Muerte') ajustarEstado(animalId, 'Para venta'); // marca para que el productor lo gestione
+
+    setToast('Listo, se guardó');
+    setTimeout(() => { setToast(''); onIrA('rebano'); }, 1200);
+    setDetalle('');
+  };
+
+  const ajustarEstado = (id, estado) => {
+    setData(d => ({ ...d, animales: d.animales.map(a => a.id === id ? { ...a, estado } : a) }));
+  };
+
+  return (
+    <React.Fragment>
+      <Cabecera titulo="Anotar" />
+      <div className="cf-scroll" style={{ padding: '20px 18px 0' }}>
+        {sinAnimales ? (
+          <Vacio
+            icono={<svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>}
+            titulo="Primero agrega un animal"
+            texto="Los eventos se anotan sobre un animal de tu rebaño. Agrega el primero en la pestaña Rebaño."
+          />
+        ) : (
+          <React.Fragment>
+            <h1 className="cf-h1" style={{ marginBottom: 20 }}>Anotar evento</h1>
+
+            <Campo label="Tipo de evento">
+              <div className="cf-seg">
+                {TIPOS_EVENTO.map(t => (
+                  <button key={t} className={'cf-seg-opt' + (tipo === t ? ' active' : '')}
+                    onClick={() => setTipo(t)} style={{ minWidth: 90 }}>{t}</button>
+                ))}
+              </div>
+            </Campo>
+
+            <Campo label="¿Cuál animal?">
+              <select className="cf-select" value={animalId} onChange={e => setAnimalId(e.target.value)}>
+                <option value="">Seleccionar…</option>
+                {data.animales.map(a => (
+                  <option key={a.id} value={a.id}>
+                    #{a.chapeta || '—'} · {a.raza} {a.sexo}
+                  </option>
+                ))}
+              </select>
+            </Campo>
+
+            <Campo label="Detalle">
+              <input className="cf-input" value={detalle} onChange={e => setDetalle(e.target.value)}
+                placeholder={
+                  tipo === 'Vacuna' ? 'Ej: Aftosa' :
+                  tipo === 'Peso' ? 'Ej: 340 kg' :
+                  tipo === 'Parto' ? 'Ej: hembra sana' :
+                  'Detalle del evento'
+                }
+                inputMode={tipo === 'Peso' ? 'numeric' : 'text'} />
+            </Campo>
+
+            <Campo label="Fecha">
+              <input className="cf-input" type="date" value={fecha} onChange={e => setFecha(e.target.value)} />
+            </Campo>
+
+            <button className="cf-btn" disabled={!puedeGuardar}
+              style={{ opacity: puedeGuardar ? 1 : 0.5, marginBottom: 24 }}
+              onClick={guardar}>Guardar evento</button>
+          </React.Fragment>
+        )}
+      </div>
+      {toast && <Toast texto={toast} />}
+    </React.Fragment>
+  );
+}
+
+/* ============================================================
+   PENDIENTES — tareas reales con vencidos y próximos
+   ============================================================ */
+
+function PantallaPendientes({ data, setData }) {
+  const [form, setForm] = React.useState(false);
+  const [texto, setTexto] = React.useState('');
+  const [fecha, setFecha] = React.useState(hoyISO());
+  const [toast, setToast] = React.useState('');
+
+  const agregar = () => {
+    if (!texto.trim()) return;
+    setData(d => ({ ...d, pendientes: [...d.pendientes, { id: nuevoId(), texto: texto.trim(), fecha, hecho: false }] }));
+    setTexto(''); setFecha(hoyISO()); setForm(false);
+    setToast('Listo, se guardó'); setTimeout(() => setToast(''), 1500);
+  };
+
+  const alternar = (id) => {
+    setData(d => ({ ...d, pendientes: d.pendientes.map(p => p.id === id ? { ...p, hecho: !p.hecho } : p) }));
+  };
+
+  const borrar = (id) => {
+    setData(d => ({ ...d, pendientes: d.pendientes.filter(p => p.id !== id) }));
+  };
+
+  const activos = data.pendientes.filter(p => !p.hecho);
+  const vencidos = activos.filter(p => { const dd = diasHasta(p.fecha); return dd !== null && dd < 0; });
+  const proximos = activos.filter(p => { const dd = diasHasta(p.fecha); return dd === null || dd >= 0; });
+  const hechos = data.pendientes.filter(p => p.hecho);
+
+  const Item = ({ p }) => {
+    const dd = diasHasta(p.fecha);
+    const vencido = dd !== null && dd < 0 && !p.hecho;
+    return (
+      <div className="cf-card" style={{ padding: 14, display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+        <button onClick={() => alternar(p.id)} style={{
+          width: 28, height: 28, borderRadius: 'var(--r-xs)', flexShrink: 0, cursor: 'pointer',
+          border: `1.5px solid ${p.hecho ? 'var(--olive)' : 'var(--rule)'}`,
+          background: p.hecho ? 'var(--olive)' : 'transparent',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          {p.hecho && <svg width="16" height="16" viewBox="0 0 16 16"><path d="M3 8l3 3 7-8" stroke="var(--paper)" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+        </button>
+        <div style={{ flex: 1 }}>
+          <div className="cf-body" style={{ fontSize: 16, textDecoration: p.hecho ? 'line-through' : 'none', color: p.hecho ? 'var(--ink-3)' : 'var(--ink-1)' }}>{p.texto}</div>
+          <div className="cf-meta" style={{ marginTop: 2, color: vencido ? 'var(--crimson)' : 'var(--ink-3)' }}>
+            {textoVencimiento(p.fecha)}
+          </div>
+        </div>
+        <button onClick={() => borrar(p.id)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 6, flexShrink: 0 }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="var(--ink-3)" strokeWidth="1.6" strokeLinecap="round"/></svg>
+        </button>
+      </div>
+    );
+  };
+
+  return (
+    <React.Fragment>
+      <Cabecera titulo="Pendientes" accion={
+        <button className="cf-btn cf-btn--sm" style={{ width: 'auto' }} onClick={() => setForm(true)}>+ Nuevo</button>
+      } />
+      <div className="cf-scroll" style={{ padding: '18px 18px 0' }}>
+        {data.pendientes.length === 0 ? (
+          <Vacio
+            icono={<svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M9 6h11M9 12h11M9 18h11M4 6l1 1 2-2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+            titulo="No tienes pendientes"
+            texto="Toca + Nuevo para anotar algo que no quieres olvidar: una vacuna, una visita, un pago."
+          />
+        ) : (
+          <React.Fragment>
+            {vencidos.length > 0 && (
+              <div style={{ marginBottom: 18 }}>
+                <span className="cf-eyebrow" style={{ color: 'var(--crimson)', display: 'block', marginBottom: 10 }}>Vencidos · {vencidos.length}</span>
+                {vencidos.map(p => <Item key={p.id} p={p} />)}
+              </div>
+            )}
+            {proximos.length > 0 && (
+              <div style={{ marginBottom: 18 }}>
+                <span className="cf-eyebrow" style={{ display: 'block', marginBottom: 10 }}>Próximos · {proximos.length}</span>
+                {proximos.map(p => <Item key={p.id} p={p} />)}
+              </div>
+            )}
+            {hechos.length > 0 && (
+              <div style={{ marginBottom: 18 }}>
+                <span className="cf-eyebrow" style={{ color: 'var(--ink-3)', display: 'block', marginBottom: 10 }}>Hechos · {hechos.length}</span>
+                {hechos.map(p => <Item key={p.id} p={p} />)}
+              </div>
+            )}
+          </React.Fragment>
+        )}
+      </div>
+
+      {form && (
+        <Hoja titulo="Nuevo pendiente" onCerrar={() => setForm(false)}>
+          <Campo label="¿Qué hay que hacer?">
+            <input className="cf-input" value={texto} onChange={e => setTexto(e.target.value)} placeholder="Ej: Comprar sal mineralizada" autoFocus />
+          </Campo>
+          <Campo label="¿Para cuándo?">
+            <input className="cf-input" type="date" value={fecha} onChange={e => setFecha(e.target.value)} />
+          </Campo>
+          <button className="cf-btn" onClick={agregar}>Guardar</button>
+        </Hoja>
+      )}
+      {toast && <Toast texto={toast} />}
+    </React.Fragment>
+  );
+}
+  </script>
+  <script type="text/babel" data-presets="react">
+/* ============================================================
+   MÁS — menú que abre Sanidad, Inventario, Potreros, Ajustes
+   ============================================================ */
+
+function PantallaMas({ onIrA, data }) {
+  const items = [
+    { id: 'sanidad', t: 'Sanidad', s: `${data.sanidad.length} medicamentos y vacunas`, ic: <path d="M9 3h6v4l4 4v9H5v-9l4-4z M9 12h6" stroke="currentColor" strokeWidth="1.6" fill="none" strokeLinejoin="round"/> },
+    { id: 'inventario', t: 'Inventario', s: `${data.inventario.length} insumos`, ic: <path d="M4 7l8-4 8 4v10l-8 4-8-4z M4 7l8 4 8-4 M12 11v10" stroke="currentColor" strokeWidth="1.6" fill="none" strokeLinejoin="round"/> },
+    { id: 'potreros', t: 'Potreros', s: `${data.potreros.length} potreros`, ic: <path d="M3 20V9l9-5 9 5v11 M3 20h18 M9 20v-6h6v6" stroke="currentColor" strokeWidth="1.6" fill="none" strokeLinejoin="round"/> },
+    { id: 'ajustes', t: 'Ajustes', s: 'Finca, respaldo, borrar datos', ic: <path d="M12 15a3 3 0 100-6 3 3 0 000 6z M19 12a7 7 0 00-.1-1l2-1.5-2-3.4-2.3 1a7 7 0 00-1.7-1l-.3-2.6h-4l-.3 2.6a7 7 0 00-1.7 1l-2.3-1-2 3.4 2 1.5a7 7 0 000 2l-2 1.5 2 3.4 2.3-1a7 7 0 001.7 1l.3 2.6h4l.3-2.6a7 7 0 001.7-1l2.3 1 2-3.4-2-1.5a7 7 0 00.1-1z" stroke="currentColor" strokeWidth="1.4" fill="none" strokeLinejoin="round"/> },
+  ];
+  return (
+    <React.Fragment>
+      <Cabecera titulo="Más" />
+      <div className="cf-scroll" style={{ padding: '20px 18px 0' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {items.map(it => (
+            <button key={it.id} className="cf-card" onClick={() => onIrA(it.id)}
+              style={{ padding: 16, display: 'flex', alignItems: 'center', gap: 14, cursor: 'pointer', textAlign: 'left', border: '1px solid var(--rule-soft)' }}>
+              <div style={{ width: 44, height: 44, borderRadius: 'var(--r-sm)', background: 'var(--paper-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--terra)', flexShrink: 0 }}>
+                <svg width="24" height="24" viewBox="0 0 24 24">{it.ic}</svg>
+              </div>
+              <div style={{ flex: 1 }}>
+                <div className="cf-h2" style={{ fontSize: 18 }}>{it.t}</div>
+                <div className="cf-meta" style={{ marginTop: 3, color: 'var(--ink-3)' }}>{it.s}</div>
+              </div>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="var(--ink-3)" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </button>
+          ))}
+        </div>
+
+        <div style={{ textAlign: 'center', marginTop: 32, opacity: 0.6 }}>
+          <span className="cf-diamond" style={{ fontSize: 14 }}>◆</span>
+          <div className="cf-meta" style={{ marginTop: 6 }}>Novuscampo · Cuaderno de finca</div>
+        </div>
+      </div>
+    </React.Fragment>
+  );
+}
+
+/* ============================================================
+   SANIDAD — medicamentos/vacunas con vencimiento (crimson auto)
+   ============================================================ */
+
+function PantallaSanidad({ data, setData, onVolver }) {
+  const [form, setForm] = React.useState(null);
+  const [toast, setToast] = React.useState('');
+  const mostrarToast = (t) => { setToast(t); setTimeout(() => setToast(''), 1600); };
+
+  const guardar = (item) => {
+    setData(d => {
+      const existe = d.sanidad.find(s => s.id === item.id);
+      const sanidad = existe ? d.sanidad.map(s => s.id === item.id ? item : s) : [...d.sanidad, item];
+      return { ...d, sanidad };
+    });
+    setForm(null); mostrarToast('Listo, se guardó');
+  };
+  const borrar = (id) => setData(d => ({ ...d, sanidad: d.sanidad.filter(s => s.id !== id) }));
+
+  return (
+    <SubPantalla titulo="Sanidad" onVolver={onVolver}
+      accion={<button className="cf-btn cf-btn--sm" style={{ width: 'auto' }} onClick={() => setForm({ id: nuevoId(), nombre: '', tipo: 'Vacuna', cantidad: '', vence: '', nuevo: true })}>+ Agregar</button>}>
+      {data.sanidad.length === 0 ? (
+        <Vacio icono={<svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M9 3h6v4l4 4v9H5v-9l4-4z" stroke="currentColor" strokeWidth="1.6" fill="none" strokeLinejoin="round"/></svg>}
+          titulo="Sin registros de sanidad"
+          texto="Agrega vacunas y medicamentos con su fecha de vencimiento. Te avisamos cuando estén por vencer." />
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {data.sanidad.map(s => {
+            const dd = diasHasta(s.vence);
+            const vencido = dd !== null && dd < 0;
+            const proximo = dd !== null && dd >= 0 && dd <= 30;
+            return (
+              <div key={s.id} className="cf-card" style={{ padding: 14, borderLeft: vencido ? '4px solid var(--crimson)' : proximo ? '4px solid var(--amber)' : '1px solid var(--rule-soft)' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span className="cf-chip cf-chip--ink">{s.tipo}</span>
+                      {vencido && <span className="cf-chip cf-chip--crimson">vencido</span>}
+                      {proximo && <span className="cf-chip cf-chip--amber">por vencer</span>}
+                    </div>
+                    <div style={{ fontFamily: 'var(--serif)', fontSize: 17, marginTop: 6 }}>{s.nombre}</div>
+                    <div className="cf-meta" style={{ marginTop: 2, color: vencido ? 'var(--crimson)' : 'var(--ink-3)' }}>
+                      {s.cantidad && `${s.cantidad} · `}{s.vence ? textoVencimiento(s.vence) : 'sin fecha'}
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+                    <button onClick={() => setForm({ ...s })} style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 6 }}>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4 20h4l10-10-4-4L4 16v4z M14 6l4 4" stroke="var(--ink-3)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    </button>
+                    <button onClick={() => borrar(s.id)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 6 }}>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="var(--ink-3)" strokeWidth="1.6" strokeLinecap="round"/></svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {form && (
+        <Hoja titulo={form.nuevo ? 'Agregar a sanidad' : 'Editar'} onCerrar={() => setForm(null)}>
+          <Campo label="Nombre"><input className="cf-input" value={form.nombre} onChange={e => setForm({ ...form, nombre: e.target.value })} placeholder="Ej: Vacuna aftosa" autoFocus /></Campo>
+          <Campo label="Tipo">
+            <div className="cf-seg">
+              {['Vacuna', 'Antibiótico', 'Desparasitante', 'Vitamina', 'Otro'].map(t => (
+                <button key={t} className={'cf-seg-opt' + (form.tipo === t ? ' active' : '')} onClick={() => setForm({ ...form, tipo: t })} style={{ minWidth: 90 }}>{t}</button>
+              ))}
+            </div>
+          </Campo>
+          <Campo label="Cantidad / dosis"><input className="cf-input" value={form.cantidad} onChange={e => setForm({ ...form, cantidad: e.target.value })} placeholder="Ej: 5 frascos" /></Campo>
+          <Campo label="Vence"><input className="cf-input" type="date" value={form.vence} onChange={e => setForm({ ...form, vence: e.target.value })} /></Campo>
+          <button className="cf-btn" onClick={() => { const l = { ...form }; delete l.nuevo; guardar(l); }}>Guardar</button>
+        </Hoja>
+      )}
+      {toast && <Toast texto={toast} />}
+    </SubPantalla>
+  );
+}
+
+/* ============================================================
+   INVENTARIO — insumos con stock bajo (crimson)
+   ============================================================ */
+
+function PantallaInventario({ data, setData, onVolver }) {
+  const [form, setForm] = React.useState(null);
+  const [toast, setToast] = React.useState('');
+  const mostrarToast = (t) => { setToast(t); setTimeout(() => setToast(''), 1600); };
+
+  const guardar = (item) => {
+    setData(d => {
+      const existe = d.inventario.find(i => i.id === item.id);
+      const inventario = existe ? d.inventario.map(i => i.id === item.id ? item : i) : [...d.inventario, item];
+      return { ...d, inventario };
+    });
+    setForm(null); mostrarToast('Listo, se guardó');
+  };
+  const borrar = (id) => setData(d => ({ ...d, inventario: d.inventario.filter(i => i.id !== id) }));
+
+  const esBajo = (i) => i.umbral !== '' && i.umbral != null ? Number(i.cantidad) <= Number(i.umbral) : !!i.stockBajo;
+
+  return (
+    <SubPantalla titulo="Inventario" onVolver={onVolver}
+      accion={<button className="cf-btn cf-btn--sm" style={{ width: 'auto' }} onClick={() => setForm({ id: nuevoId(), nombre: '', cantidad: '', unidad: '', umbral: '', stockBajo: false, nuevo: true })}>+ Agregar</button>}>
+      {data.inventario.length === 0 ? (
+        <Vacio icono={<svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M4 7l8-4 8 4v10l-8 4-8-4z" stroke="currentColor" strokeWidth="1.6" fill="none" strokeLinejoin="round"/></svg>}
+          titulo="Inventario vacío"
+          texto="Agrega insumos como sal, alimento o combustible. Marca los que están por acabarse." />
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {data.inventario.map(i => {
+            const bajo = esBajo(i);
+            return (
+              <div key={i.id} className="cf-card" style={{ padding: 14, display: 'flex', alignItems: 'center', gap: 12, borderLeft: bajo ? '4px solid var(--crimson)' : '1px solid var(--rule-soft)' }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontFamily: 'var(--serif)', fontSize: 17 }}>{i.nombre}</span>
+                    {bajo && <span className="cf-chip cf-chip--crimson">stock bajo</span>}
+                  </div>
+                  <div className="cf-meta" style={{ marginTop: 2, color: 'var(--ink-3)' }}>
+                    <span className="cf-num">{i.cantidad}</span> {i.unidad}{i.umbral !== '' && i.umbral != null ? ` · alerta bajo ${i.umbral}` : ''}
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+                  <button onClick={() => setForm({ ...i })} style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 6 }}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4 20h4l10-10-4-4L4 16v4z M14 6l4 4" stroke="var(--ink-3)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  </button>
+                  <button onClick={() => borrar(i.id)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 6 }}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="var(--ink-3)" strokeWidth="1.6" strokeLinecap="round"/></svg>
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {form && (
+        <Hoja titulo={form.nuevo ? 'Agregar insumo' : 'Editar'} onCerrar={() => setForm(null)}>
+          <Campo label="Nombre"><input className="cf-input" value={form.nombre} onChange={e => setForm({ ...form, nombre: e.target.value })} placeholder="Ej: Sal mineralizada" autoFocus /></Campo>
+          <div style={{ display: 'flex', gap: 12 }}>
+            <div style={{ flex: 1 }}><Campo label="Cantidad"><input className="cf-input" value={form.cantidad} onChange={e => setForm({ ...form, cantidad: e.target.value })} placeholder="0" inputMode="numeric" /></Campo></div>
+            <div style={{ flex: 1 }}><Campo label="Unidad"><input className="cf-input" value={form.unidad} onChange={e => setForm({ ...form, unidad: e.target.value })} placeholder="sacos, kg…" /></Campo></div>
+          </div>
+          <Campo label="Avisar cuando baje de (opcional)"><input className="cf-input" value={form.umbral} onChange={e => setForm({ ...form, umbral: e.target.value })} placeholder="Ej: 2" inputMode="numeric" /></Campo>
+          <button className="cf-btn" onClick={() => { const l = { ...form }; delete l.nuevo; guardar(l); }}>Guardar</button>
+        </Hoja>
+      )}
+      {toast && <Toast texto={toast} />}
+    </SubPantalla>
+  );
+}
+
+/* ============================================================
+   POTREROS — nombre, estado, días
+   ============================================================ */
+
+function PantallaPotreros({ data, setData, onVolver }) {
+  const [form, setForm] = React.useState(null);
+  const [toast, setToast] = React.useState('');
+  const mostrarToast = (t) => { setToast(t); setTimeout(() => setToast(''), 1600); };
+
+  const guardar = (item) => {
+    setData(d => {
+      const existe = d.potreros.find(p => p.id === item.id);
+      const potreros = existe ? d.potreros.map(p => p.id === item.id ? item : p) : [...d.potreros, item];
+      return { ...d, potreros };
+    });
+    setForm(null); mostrarToast('Listo, se guardó');
+  };
+  const borrar = (id) => setData(d => ({ ...d, potreros: d.potreros.filter(p => p.id !== id) }));
+
+  const colorEstado = { 'En uso': 'olive', 'Descansando': 'amber', 'Listo': 'terra' };
+
+  return (
+    <SubPantalla titulo="Potreros" onVolver={onVolver}
+      accion={<button className="cf-btn cf-btn--sm" style={{ width: 'auto' }} onClick={() => setForm({ id: nuevoId(), nombre: '', estado: 'En uso', dias: '', nuevo: true })}>+ Agregar</button>}>
+      {data.potreros.length === 0 ? (
+        <Vacio icono={<svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M3 20V9l9-5 9 5v11" stroke="currentColor" strokeWidth="1.6" fill="none" strokeLinejoin="round"/></svg>}
+          titulo="Sin potreros"
+          texto="Registra tus potreros para llevar control de cuáles están en uso y cuáles descansando." />
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {data.potreros.map(p => (
+            <div key={p.id} className="cf-card" style={{ padding: 14, display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontFamily: 'var(--serif)', fontSize: 17 }}>{p.nombre}</span>
+                  <span className={`cf-chip cf-chip--${colorEstado[p.estado] || 'ink'}`}>{p.estado}</span>
+                </div>
+                {p.dias && <div className="cf-meta" style={{ marginTop: 2, color: 'var(--ink-3)' }}><span className="cf-num">{p.dias}</span> días</div>}
+              </div>
+              <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+                <button onClick={() => setForm({ ...p })} style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 6 }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4 20h4l10-10-4-4L4 16v4z M14 6l4 4" stroke="var(--ink-3)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                </button>
+                <button onClick={() => borrar(p.id)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 6 }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="var(--ink-3)" strokeWidth="1.6" strokeLinecap="round"/></svg>
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {form && (
+        <Hoja titulo={form.nuevo ? 'Agregar potrero' : 'Editar'} onCerrar={() => setForm(null)}>
+          <Campo label="Nombre"><input className="cf-input" value={form.nombre} onChange={e => setForm({ ...form, nombre: e.target.value })} placeholder="Ej: Potrero del río" autoFocus /></Campo>
+          <Campo label="Estado">
+            <div className="cf-seg">
+              {['En uso', 'Descansando', 'Listo'].map(s => (
+                <button key={s} className={'cf-seg-opt' + (form.estado === s ? ' active' : '')} onClick={() => setForm({ ...form, estado: s })}>{s}</button>
+              ))}
+            </div>
+          </Campo>
+          <Campo label="Días en este estado (opcional)"><input className="cf-input" value={form.dias} onChange={e => setForm({ ...form, dias: e.target.value })} placeholder="Ej: 15" inputMode="numeric" /></Campo>
+          <button className="cf-btn" onClick={() => { const l = { ...form }; delete l.nuevo; guardar(l); }}>Guardar</button>
+        </Hoja>
+      )}
+      {toast && <Toast texto={toast} />}
+    </SubPantalla>
+  );
+}
+
+// Sub-pantalla con cabecera de "volver" (para las secciones de Más).
+function SubPantalla({ titulo, onVolver, accion, children }) {
+  return (
+    <React.Fragment>
+      <header className="cf-header cf-newsprint">
+        <button onClick={onVolver} style={{ background: 'transparent', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, padding: 0 }}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="var(--ink)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          <span className="cf-wordmark" style={{ fontSize: 18 }}>{titulo}</span>
+        </button>
+        {accion}
+      </header>
+      <div className="cf-scroll" style={{ padding: '18px 18px 0' }}>{children}</div>
+    </React.Fragment>
+  );
+}
+  </script>
+  <script type="text/babel" data-presets="react">
+/* ============================================================
+   AJUSTES — datos de finca, exportar, borrar todo
+   ============================================================ */
+
+function PantallaAjustes({ data, setData, onVolver, onReset }) {
+  const [editFinca, setEditFinca] = React.useState(false);
+  const [confirmarBorrar, setConfirmarBorrar] = React.useState(false);
+  const [toast, setToast] = React.useState('');
+  const mostrarToast = (t) => { setToast(t); setTimeout(() => setToast(''), 1800); };
+
+  // Exporta TODO el cuaderno como archivo JSON descargable (respaldo manual).
+  const exportar = () => {
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const fecha = hoyISO();
+    a.href = url;
+    a.download = `cuaderno-${data.finca.finca.toLowerCase().replace(/\s+/g, '-')}-${fecha}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    mostrarToast('Respaldo descargado');
+  };
+
+  // Borra TODO y vuelve al onboarding.
+  const borrarTodo = () => {
+    localStorage.removeItem(STORAGE_KEY);
+    onReset();
+  };
+
+  return (
+    <SubPantalla titulo="Ajustes" onVolver={onVolver}>
+      {/* Datos de la finca */}
+      <span className="cf-eyebrow" style={{ display: 'block', marginBottom: 12 }}>Tu finca</span>
+      <div className="cf-card" style={{ padding: '4px 16px', marginBottom: 22 }}>
+        <div className="cf-row">
+          <span className="cf-meta">Productor</span>
+          <span className="cf-body" style={{ fontWeight: 500 }}>{data.finca.productor}</span>
+        </div>
+        <div className="cf-row">
+          <span className="cf-meta">Finca</span>
+          <span className="cf-body" style={{ fontWeight: 500 }}>{data.finca.finca}</span>
+        </div>
+        <div className="cf-row">
+          <span className="cf-meta">Estado</span>
+          <span className="cf-body" style={{ fontWeight: 500 }}>{data.finca.estado}</span>
+        </div>
+      </div>
+      <button className="cf-btn cf-btn--ghost" style={{ marginBottom: 28 }} onClick={() => setEditFinca(true)}>Editar datos de la finca</button>
+
+      {/* Respaldo */}
+      <span className="cf-eyebrow" style={{ display: 'block', marginBottom: 12 }}>Tus datos</span>
+      <div className="cf-notice" style={{ marginBottom: 16 }}>
+        Versión de prueba — tus datos se guardan solo en este teléfono. Si borras el caché del navegador o cambias de equipo, se pierden. Por eso conviene exportar un respaldo de vez en cuando.
+      </div>
+      <button className="cf-btn cf-btn--ink" style={{ marginBottom: 12 }} onClick={exportar}>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 3v12M7 10l5 5 5-5M5 21h14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+        Exportar mis datos
+      </button>
+      <button className="cf-btn cf-btn--ghost" style={{ marginBottom: 28, color: 'var(--crimson)', borderColor: 'var(--crimson)' }} onClick={() => setConfirmarBorrar(true)}>
+        Borrar todo
+      </button>
+
+      {/* Resumen de lo guardado */}
+      <span className="cf-eyebrow" style={{ display: 'block', marginBottom: 12 }}>Resumen</span>
+      <div className="cf-card" style={{ padding: '4px 16px', marginBottom: 28 }}>
+        {[
+          ['Animales', data.animales.length],
+          ['Pendientes', data.pendientes.length],
+          ['Sanidad', data.sanidad.length],
+          ['Inventario', data.inventario.length],
+          ['Potreros', data.potreros.length],
+        ].map(([k, v]) => (
+          <div key={k} className="cf-row">
+            <span className="cf-meta">{k}</span>
+            <span className="cf-num" style={{ fontSize: 16 }}>{v}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Marca */}
+      <div style={{ textAlign: 'center', marginBottom: 24, opacity: 0.6 }}>
+        <span className="cf-diamond" style={{ fontSize: 16 }}>◆</span>
+        <div className="cf-meta" style={{ marginTop: 6 }}>Novuscampo · Cuaderno de finca</div>
+        <div className="cf-meta" style={{ marginTop: 2, color: 'var(--ink-4)' }}>versión de prueba</div>
+      </div>
+
+      {editFinca && <FormFinca finca={data.finca} onGuardar={(f) => { setData(d => ({ ...d, finca: f })); setEditFinca(false); mostrarToast('Listo, se guardó'); }} onCerrar={() => setEditFinca(false)} />}
+      {confirmarBorrar && <Confirmar
+        titulo="¿Borrar todo?"
+        texto="Se borrarán todos tus datos de este teléfono: animales, eventos, pendientes, sanidad, inventario y potreros. Esto no se puede deshacer. Si quieres conservarlos, exporta un respaldo primero."
+        textoSi="Sí, borrar todo"
+        onSi={borrarTodo} onNo={() => setConfirmarBorrar(false)} />}
+      {toast && <Toast texto={toast} />}
+    </SubPantalla>
+  );
+}
+
+// Formulario para editar datos de la finca.
+function FormFinca({ finca, onGuardar, onCerrar }) {
+  const [f, setF] = React.useState(finca);
+  const estados = ['Apure', 'Barinas', 'Guárico', 'Cojedes', 'Portuguesa', 'Zulia', 'Lara', 'Monagas', 'Anzoátegui', 'Táchira', 'Mérida', 'Trujillo', 'Falcón', 'Yaracuy', 'Carabobo', 'Bolívar', 'Otro'];
+  return (
+    <Hoja titulo="Editar finca" onCerrar={onCerrar}>
+      <Campo label="Tu nombre"><input className="cf-input" value={f.productor} onChange={e => setF({ ...f, productor: e.target.value })} /></Campo>
+      <Campo label="Nombre de la finca"><input className="cf-input" value={f.finca} onChange={e => setF({ ...f, finca: e.target.value })} /></Campo>
+      <Campo label="Estado / región">
+        <select className="cf-select" value={f.estado} onChange={e => setF({ ...f, estado: e.target.value })}>
+          {estados.map(e => <option key={e} value={e}>{e}</option>)}
+        </select>
+      </Campo>
+      <button className="cf-btn" onClick={() => onGuardar(f)}>Guardar</button>
+    </Hoja>
+  );
+}
+
+/* ============================================================
+   APP — router principal + estado global del cuaderno
+   ============================================================ */
+
+function App() {
+  const [data, setData] = useCuaderno();
+  const [tab, setTab] = React.useState('inicio');     // pestaña activa de la barra
+  const [vista, setVista] = React.useState(null);      // sub-vista (animal, sanidad, etc.) o null
+  const [animalAbierto, setAnimalAbierto] = React.useState(null);
+
+  // Si no hay finca registrada, mostramos el onboarding.
+  const [pasoOnb, setPasoOnb] = React.useState('bienvenida'); // bienvenida → registro
+
+  // ¿Ya tiene finca? Si no, onboarding.
+  if (!data.finca) {
+    if (pasoOnb === 'bienvenida') {
+      return (
+        <div className="cf-app">
+          <Bienvenida onEmpezar={() => setPasoOnb('registro')} />
+        </div>
+      );
+    }
+    return (
+      <div className="cf-app">
+        <Registro onCrear={(finca) => setData(d => ({ ...d, finca }))} />
+      </div>
+    );
+  }
+
+  // Reset completo: vuelve al onboarding tras borrar todo.
+  const reset = () => {
+    setData(estructuraVacia());
+    setTab('inicio'); setVista(null); setPasoOnb('bienvenida');
+  };
+
+  // Navegación entre pestañas y sub-vistas.
+  const irA = (destino) => {
+    if (['inicio', 'rebano', 'anotar', 'pendientes', 'mas'].includes(destino)) {
+      setTab(destino); setVista(null); setAnimalAbierto(null);
+    } else {
+      setVista(destino); // sanidad, inventario, potreros, ajustes
+    }
+  };
+
+  // ¿Qué pantalla mostramos en el área de contenido?
+  let contenido;
+  if (animalAbierto) {
+    contenido = <PantallaAnimal data={data} setData={setData} animalId={animalAbierto} onVolver={() => setAnimalAbierto(null)} />;
+  } else if (vista === 'sanidad') {
+    contenido = <PantallaSanidad data={data} setData={setData} onVolver={() => setVista(null)} />;
+  } else if (vista === 'inventario') {
+    contenido = <PantallaInventario data={data} setData={setData} onVolver={() => setVista(null)} />;
+  } else if (vista === 'potreros') {
+    contenido = <PantallaPotreros data={data} setData={setData} onVolver={() => setVista(null)} />;
+  } else if (vista === 'ajustes') {
+    contenido = <PantallaAjustes data={data} setData={setData} onVolver={() => setVista(null)} onReset={reset} />;
+  } else if (tab === 'inicio') {
+    contenido = <PantallaInicio data={data} onIrA={irA} />;
+  } else if (tab === 'rebano') {
+    contenido = <PantallaRebano data={data} setData={setData} onAbrirAnimal={setAnimalAbierto} />;
+  } else if (tab === 'anotar') {
+    contenido = <PantallaAnotar data={data} setData={setData} onIrA={irA} />;
+  } else if (tab === 'pendientes') {
+    contenido = <PantallaPendientes data={data} setData={setData} />;
+  } else if (tab === 'mas') {
+    contenido = <PantallaMas data={data} onIrA={irA} />;
+  }
+
+  // La barra inferior se oculta dentro de sub-vistas con su propio "volver".
+  const mostrarBarra = !animalAbierto && !vista;
+
+  return (
+    <div className="cf-app">
+      {contenido}
+      {mostrarBarra && <BarraNav activa={tab} onCambiar={irA} />}
+    </div>
+  );
+}
+
+// Monta la app.
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
+  </script>
+  <script>
+    // Registra el service worker para que la app sea instalable y abra offline.
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(() => {
+          // Si falla el registro (ej: abierto como archivo local), la app
+          // sigue funcionando igual; solo no tendrá modo offline instalado.
+        });
+      });
+    }
+  </script>
+</body>
+</html>
