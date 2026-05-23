@@ -2065,7 +2065,7 @@ function compartirPDF(blob, nombreArchivo, onResultado) {
    ============================================================ */
 
 function App() {
-  const [data, setData] = useCuaderno();
+  const [data, setData, errorGuardado] = useCuaderno();
   const [tab, setTab] = React.useState('inicio');     // pestaña activa de la barra
   const [vista, setVista] = React.useState(null);      // sub-vista (animal, sanidad, etc.) o null
   const [animalAbierto, setAnimalAbierto] = React.useState(null);
