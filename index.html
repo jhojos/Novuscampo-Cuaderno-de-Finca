@@ -883,16 +883,14 @@ function PantallaRebano({ data, setData, onAbrirAnimal }) {
   return (
     <React.Fragment>
       <Cabecera titulo="Rebaño" accion={
-        data.animales.length > 0 ? (
-          seleccionando ? (
-            <button className="cf-btn cf-btn--sm cf-btn--ghost" style={{ width: 'auto' }} onClick={salirSeleccion}>Cancelar</button>
-          ) : (
-            <button className="cf-btn cf-btn--sm" style={{ width: 'auto' }}
-              onClick={() => setForm({ id: nuevoId(), chapeta: '', sexo: 'Hembra', raza: 'Brahman', edad: '', peso: '', estado: 'Sano', nota: '', foto: null, eventos: [], nuevo: true })}>
-              + Agregar
-            </button>
-          )
-        ) : null
+        seleccionando ? (
+          <button className="cf-btn cf-btn--sm cf-btn--ghost" style={{ width: 'auto' }} onClick={salirSeleccion}>Cancelar</button>
+        ) : (
+          <button className="cf-btn cf-btn--sm" style={{ width: 'auto' }}
+            onClick={() => setForm({ id: nuevoId(), chapeta: '', sexo: 'Hembra', raza: 'Brahman', edad: '', peso: '', estado: 'Sano', nota: '', foto: null, eventos: [], nuevo: true })}>
+            + Agregar
+          </button>
+        )
       } />
       <div className="cf-scroll" style={{ padding: '18px 18px 0' }}>
         {data.animales.length === 0 ? (
