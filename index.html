@@ -19,6 +19,9 @@
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- jsPDF para generar fichas PDF de animales (se carga desde CDN, como React) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
 /* ============================================================
    Novuscampo — Cuaderno de Finca
@@ -320,18 +323,23 @@ function estructuraVacia() {
 // Cada vez que cambia el estado, se guarda. Al abrir la app, se lee.
 function useCuaderno() {
   const [data, setData] = React.useState(leerCuaderno);
+  // errorGuardado avisa si el teléfono se quedó sin espacio (típicamente por fotos).
+  const [errorGuardado, setErrorGuardado] = React.useState(false);
 
   // Guarda en el teléfono cada vez que 'data' cambia.
   React.useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      setErrorGuardado(false);
     } catch (e) {
-      // Si el almacenamiento está lleno o bloqueado, avisamos por consola.
-      // En la práctica, los volúmenes de un cuaderno son pequeños.
+      // El almacenamiento del teléfono se llenó (suele pasar con muchas fotos).
+      // No silenciamos el error: avisamos para que el usuario libere espacio
+      // (borrar fotos de animales viejos) y no pierda datos sin saberlo.
+      setErrorGuardado(true);
     }
   }, [data]);
 
-  return [data, setData];
+  return [data, setData, errorGuardado];
 }
 
 // Genera un id único simple (suficiente para uso local en un teléfono).
@@ -501,6 +509,85 @@ function Confirmar({ titulo, texto, onSi, onNo, textoSi = 'Sí, borrar' }) {
           <button className="cf-btn cf-btn--ghost" onClick={onNo}>Cancelar</button>
         </div>
       </div>
+    </div>
+  );
+}
+
+// Comprime una imagen a JPEG pequeño (~máx 800px, calidad 70%) usando canvas.
+// Esto evita llenar el almacenamiento del teléfono: una foto de 3 MB queda en ~100 KB.
+function comprimirImagen(file, callback) {
+  const lector = new FileReader();
+  lector.onload = (e) => {
+    const img = new Image();
+    img.onload = () => {
+      const maxLado = 800;
+      let { width, height } = img;
+      if (width > height && width > maxLado) {
+        height = Math.round(height * maxLado / width);
+        width = maxLado;
+      } else if (height > maxLado) {
+        width = Math.round(width * maxLado / height);
+        height = maxLado;
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+      // toDataURL con calidad 0.7 da buena relación tamaño/nitidez para fotos de ganado.
+      callback(canvas.toDataURL('image/jpeg', 0.7));
+    };
+    img.src = e.target.result;
+  };
+  lector.readAsDataURL(file);
+}
+
+// Campo de foto: muestra la foto actual (si hay) y botones para tomar/cambiar/quitar.
+// Una sola foto principal por animal (decisión de simplicidad).
+function CampoFoto({ foto, onCambiar }) {
+  const inputRef = React.useRef(null);
+  const [cargando, setCargando] = React.useState(false);
+
+  const elegir = (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    setCargando(true);
+    comprimirImagen(file, (dataUrl) => {
+      onCambiar(dataUrl);
+      setCargando(false);
+    });
+    // Limpia el input para permitir volver a elegir el mismo archivo.
+    e.target.value = '';
+  };
+
+  return (
+    <div style={{ marginBottom: 18 }}>
+      <label className="cf-label">Foto del animal</label>
+      {/* input oculto: abre cámara o galería del teléfono */}
+      <input ref={inputRef} type="file" accept="image/*" capture="environment"
+        onChange={elegir} style={{ display: 'none' }} />
+
+      {foto ? (
+        <div>
+          <div style={{ position: 'relative', borderRadius: 'var(--r-md)', overflow: 'hidden', border: '1px solid var(--rule)', marginBottom: 10 }}>
+            <img src={foto} alt="Foto del animal" style={{ width: '100%', display: 'block', maxHeight: 260, objectFit: 'cover' }} />
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button className="cf-btn cf-btn--ghost cf-btn--sm" style={{ flex: 1 }} onClick={() => inputRef.current.click()}>Cambiar foto</button>
+            <button className="cf-btn cf-btn--ghost cf-btn--sm" style={{ flex: 1, color: 'var(--crimson)', borderColor: 'var(--crimson)' }} onClick={() => onCambiar(null)}>Quitar</button>
+          </div>
+        </div>
+      ) : (
+        <button className="cf-btn cf-btn--ghost" onClick={() => inputRef.current.click()} disabled={cargando}
+          style={{ borderStyle: 'dashed', minHeight: 80, flexDirection: 'column', gap: 6 }}>
+          {cargando ? 'Procesando…' : (
+            <React.Fragment>
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M3 8a2 2 0 012-2h2l1.5-2h7L17 6h2a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round"/><circle cx="12" cy="12.5" r="3.2" stroke="currentColor" strokeWidth="1.6"/></svg>
+              <span style={{ fontSize: 15 }}>Tomar foto o elegir del teléfono</span>
+            </React.Fragment>
+          )}
+        </button>
+      )}
     </div>
   );
 }
@@ -759,6 +846,9 @@ const TIPOS_EVENTO = ['Vacuna', 'Peso', 'Parto', 'Enfermedad', 'Compra', 'Venta'
 function PantallaRebano({ data, setData, onAbrirAnimal }) {
   const [form, setForm] = React.useState(null); // null = cerrado; objeto = editando/creando
   const [toast, setToast] = React.useState('');
+  const [seleccionando, setSeleccionando] = React.useState(false); // modo selección múltiple
+  const [seleccion, setSeleccion] = React.useState([]);            // ids seleccionados
+  const [exportar, setExportar] = React.useState(false);
 
   const mostrarToast = (t) => { setToast(t); setTimeout(() => setToast(''), 1800); };
 
@@ -774,13 +864,35 @@ function PantallaRebano({ data, setData, onAbrirAnimal }) {
     mostrarToast('Listo, se guardó');
   };
 
+  // Alterna un animal en la selección.
+  const alternarSeleccion = (id) => {
+    setSeleccion(sel => sel.includes(id) ? sel.filter(x => x !== id) : [...sel, id]);
+  };
+
+  // Sale del modo selección y limpia.
+  const salirSeleccion = () => { setSeleccionando(false); setSeleccion([]); };
+
+  const animalesSeleccionados = data.animales.filter(a => seleccion.includes(a.id));
+
+  // Al tocar una tarjeta: abre el animal, o lo (de)selecciona si estamos en modo selección.
+  const tocarAnimal = (id) => {
+    if (seleccionando) alternarSeleccion(id);
+    else onAbrirAnimal(id);
+  };
+
   return (
     <React.Fragment>
       <Cabecera titulo="Rebaño" accion={
-        <button className="cf-btn cf-btn--sm" style={{ width: 'auto' }}
-          onClick={() => setForm({ id: nuevoId(), chapeta: '', sexo: 'Hembra', raza: 'Brahman', edad: '', peso: '', estado: 'Sano', nota: '', eventos: [], nuevo: true })}>
-          + Agregar
-        </button>
+        data.animales.length > 0 ? (
+          seleccionando ? (
+            <button className="cf-btn cf-btn--sm cf-btn--ghost" style={{ width: 'auto' }} onClick={salirSeleccion}>Cancelar</button>
+          ) : (
+            <button className="cf-btn cf-btn--sm" style={{ width: 'auto' }}
+              onClick={() => setForm({ id: nuevoId(), chapeta: '', sexo: 'Hembra', raza: 'Brahman', edad: '', peso: '', estado: 'Sano', nota: '', foto: null, eventos: [], nuevo: true })}>
+              + Agregar
+            </button>
+          )
+        ) : null
       } />
       <div className="cf-scroll" style={{ padding: '18px 18px 0' }}>
         {data.animales.length === 0 ? (
@@ -791,31 +903,83 @@ function PantallaRebano({ data, setData, onAbrirAnimal }) {
           />
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <div className="cf-meta" style={{ marginBottom: 2 }}>{data.animales.length} en el rebaño</div>
-            {data.animales.map(a => (
-              <button key={a.id} className="cf-card" onClick={() => onAbrirAnimal(a.id)}
-                style={{ padding: 14, display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', textAlign: 'left', border: '1px solid var(--rule-soft)' }}>
-                <div className="cf-ph" style={{ width: 52, height: 52, borderRadius: 'var(--r-sm)', flexShrink: 0 }}>
-                  {a.chapeta ? <span className="cf-num" style={{ fontSize: 13, color: 'var(--ink-2)' }}>{a.chapeta}</span> : ''}
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span className="cf-num cf-meta" style={{ color: 'var(--ink-3)' }}>#{a.chapeta || '—'}</span>
-                    <EstadoChip estado={a.estado} />
+            {/* Barra superior: contador + botón para entrar a modo selección */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 }}>
+              <span className="cf-meta">
+                {seleccionando
+                  ? `${seleccion.length} seleccionado${seleccion.length === 1 ? '' : 's'}`
+                  : `${data.animales.length} en el rebaño`}
+              </span>
+              {!seleccionando && (
+                <button onClick={() => setSeleccionando(true)}
+                  className="cf-meta" style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--terra)', textDecoration: 'underline', padding: 0 }}>
+                  Seleccionar para PDF
+                </button>
+              )}
+            </div>
+
+            {data.animales.map(a => {
+              const elegido = seleccion.includes(a.id);
+              return (
+                <button key={a.id} className="cf-card" onClick={() => tocarAnimal(a.id)}
+                  style={{ padding: 14, display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', textAlign: 'left',
+                    border: elegido ? '2px solid var(--terra)' : '1px solid var(--rule-soft)' }}>
+                  {/* Casilla de selección (solo en modo selección) */}
+                  {seleccionando && (
+                    <span style={{ width: 24, height: 24, borderRadius: 'var(--r-xs)', flexShrink: 0,
+                      border: `1.5px solid ${elegido ? 'var(--terra)' : 'var(--rule)'}`,
+                      background: elegido ? 'var(--terra)' : 'transparent',
+                      display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                      {elegido && <svg width="15" height="15" viewBox="0 0 16 16"><path d="M3 8l3 3 7-8" stroke="var(--paper)" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                    </span>
+                  )}
+                  {a.foto ? (
+                    <img src={a.foto} alt="" style={{ width: 52, height: 52, borderRadius: 'var(--r-sm)', objectFit: 'cover', flexShrink: 0, border: '1px solid var(--rule-soft)' }} />
+                  ) : (
+                    <div className="cf-ph" style={{ width: 52, height: 52, borderRadius: 'var(--r-sm)', flexShrink: 0 }}>
+                      {a.chapeta ? <span className="cf-num" style={{ fontSize: 13, color: 'var(--ink-2)' }}>{a.chapeta}</span> : ''}
+                    </div>
+                  )}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span className="cf-num cf-meta" style={{ color: 'var(--ink-3)' }}>#{a.chapeta || '—'}</span>
+                      <EstadoChip estado={a.estado} />
+                    </div>
+                    <div style={{ fontFamily: 'var(--serif)', fontSize: 17, marginTop: 2 }}>{a.raza} · {a.sexo}</div>
+                    <div className="cf-meta" style={{ marginTop: 2, color: 'var(--ink-3)' }}>
+                      {a.edad && `${a.edad}`}{a.peso && ` · ${a.peso} kg`}{a.eventos.length > 0 && ` · ${a.eventos.length} eventos`}
+                    </div>
                   </div>
-                  <div style={{ fontFamily: 'var(--serif)', fontSize: 17, marginTop: 2 }}>{a.raza} · {a.sexo}</div>
-                  <div className="cf-meta" style={{ marginTop: 2, color: 'var(--ink-3)' }}>
-                    {a.edad && `${a.edad}`}{a.peso && ` · ${a.peso} kg`}{a.eventos.length > 0 && ` · ${a.eventos.length} eventos`}
-                  </div>
-                </div>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}><path d="M9 6l6 6-6 6" stroke="var(--ink-3)" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
-              </button>
-            ))}
+                  {!seleccionando && (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}><path d="M9 6l6 6-6 6" stroke="var(--ink-3)" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  )}
+                </button>
+              );
+            })}
           </div>
         )}
       </div>
 
+      {/* Barra fija inferior en modo selección: exportar los elegidos */}
+      {seleccionando && seleccion.length > 0 && (
+        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '12px 18px calc(16px + env(safe-area-inset-bottom, 0px))', background: 'var(--paper)', borderTop: '1px solid var(--rule)' }}>
+          <button className="cf-btn" onClick={() => setExportar(true)}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4 12v6a2 2 0 002 2h12a2 2 0 002-2v-6M12 3v12M8 11l4 4 4-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            Exportar {seleccion.length} en PDF
+          </button>
+        </div>
+      )}
+
       {form && <FormAnimal animal={form} onGuardar={guardar} onCerrar={() => setForm(null)} />}
+      {exportar && <DialogoExportar animales={animalesSeleccionados} finca={data.finca}
+        onCerrar={() => setExportar(false)}
+        onResultado={(res) => {
+          setExportar(false);
+          if (res === 'compartido' || res === 'descargado') {
+            mostrarToast(res === 'descargado' ? 'PDF descargado' : 'Listo');
+            salirSeleccion();
+          }
+        }} />}
       {toast && <Toast texto={toast} />}
     </React.Fragment>
   );
@@ -837,6 +1001,8 @@ function FormAnimal({ animal, onGuardar, onCerrar }) {
 
   return (
     <Hoja titulo={animal.nuevo ? 'Agregar animal' : 'Editar animal'} onCerrar={onCerrar}>
+      <CampoFoto foto={a.foto} onCambiar={(dataUrl) => set('foto', dataUrl)} />
+
       <Campo label="Chapeta / número">
         <input className="cf-input" value={a.chapeta} onChange={e => set('chapeta', e.target.value)}
           placeholder="Ej: 247" inputMode="numeric" />
@@ -889,6 +1055,7 @@ function FormAnimal({ animal, onGuardar, onCerrar }) {
 function PantallaAnimal({ data, setData, animalId, onVolver }) {
   const [confirmar, setConfirmar] = React.useState(false);
   const [editar, setEditar] = React.useState(false);
+  const [exportar, setExportar] = React.useState(false);
   const [toast, setToast] = React.useState('');
   const animal = data.animales.find(a => a.id === animalId);
 
@@ -923,6 +1090,11 @@ function PantallaAnimal({ data, setData, animalId, onVolver }) {
           <span className="cf-num cf-eyebrow">#{animal.chapeta || '—'}</span>
           <EstadoChip estado={animal.estado} />
         </div>
+        {animal.foto && (
+          <div style={{ borderRadius: 'var(--r-md)', overflow: 'hidden', border: '1px solid var(--rule)', marginBottom: 16 }}>
+            <img src={animal.foto} alt="Foto del animal" style={{ width: '100%', display: 'block', maxHeight: 280, objectFit: 'cover' }} />
+          </div>
+        )}
         <h1 className="cf-h1" style={{ marginBottom: 16 }}>{animal.raza} · {animal.sexo}</h1>
 
         <div className="cf-card" style={{ padding: '4px 16px', marginBottom: 20 }}>
@@ -965,6 +1137,13 @@ function PantallaAnimal({ data, setData, animalId, onVolver }) {
           </div>
         )}
 
+        {/* Exportar ficha PDF para vender */}
+        <button className="cf-btn cf-btn--ink" style={{ marginBottom: 12 }}
+          onClick={() => setExportar(true)}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M14 3H6a2 2 0 00-2 2v14a2 2 0 002 2h12a2 2 0 002-2V9zM14 3v6h6" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          Exportar ficha PDF
+        </button>
+
         {/* Borrar */}
         <button className="cf-btn cf-btn--ghost" style={{ marginBottom: 24, color: 'var(--crimson)', borderColor: 'var(--crimson)' }}
           onClick={() => setConfirmar(true)}>
@@ -973,6 +1152,12 @@ function PantallaAnimal({ data, setData, animalId, onVolver }) {
       </div>
 
       {editar && <FormAnimal animal={animal} onGuardar={guardarEdit} onCerrar={() => setEditar(false)} />}
+      {exportar && <DialogoExportar animales={[animal]} finca={data.finca}
+        onCerrar={() => setExportar(false)}
+        onResultado={(res) => {
+          setExportar(false);
+          if (res === 'compartido' || res === 'descargado') mostrarToast(res === 'descargado' ? 'PDF descargado' : 'Listo');
+        }} />}
       {confirmar && <Confirmar
         titulo="¿Borrar este animal?"
         texto="Se borrará del rebaño junto con su historial. Esto no se puede deshacer."
@@ -1083,6 +1268,28 @@ function PantallaAnotar({ data, setData, onIrA }) {
    PENDIENTES — tareas reales con vencidos y próximos
    ============================================================ */
 
+// Arma un mensaje de texto con los pendientes activos y abre WhatsApp.
+// Funciona 100% (texto plano vía wa.me) en móvil y escritorio.
+function compartirPendientesWhatsApp(vencidos, proximos) {
+  const lineas = ['*Pendientes de la finca*', ''];
+  if (vencidos.length > 0) {
+    lineas.push('Vencidos:');
+    vencidos.forEach(p => lineas.push(`- ${p.texto} (${textoVencimiento(p.fecha)})`));
+    lineas.push('');
+  }
+  if (proximos.length > 0) {
+    lineas.push('Próximos:');
+    proximos.forEach(p => {
+      const cuando = p.fecha ? ` (${textoVencimiento(p.fecha)})` : '';
+      lineas.push(`- ${p.texto}${cuando}`);
+    });
+  }
+  const texto = lineas.join('\n').trim();
+  // wa.me abre WhatsApp con el texto ya escrito; el usuario elige a quién enviarlo.
+  const url = 'https://wa.me/?text=' + encodeURIComponent(texto);
+  window.open(url, '_blank');
+}
+
 function PantallaPendientes({ data, setData }) {
   const [form, setForm] = React.useState(false);
   const [texto, setTexto] = React.useState('');
@@ -1141,6 +1348,13 @@ function PantallaPendientes({ data, setData }) {
         <button className="cf-btn cf-btn--sm" style={{ width: 'auto' }} onClick={() => setForm(true)}>+ Nuevo</button>
       } />
       <div className="cf-scroll" style={{ padding: '18px 18px 0' }}>
+        {(vencidos.length > 0 || proximos.length > 0) && (
+          <button className="cf-btn cf-btn--olive" style={{ marginBottom: 16 }}
+            onClick={() => compartirPendientesWhatsApp(vencidos, proximos)}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M20.5 3.5C18.3 1.3 15.3 0 12 0 5.4 0 0 5.4 0 12c0 2.1.6 4.2 1.6 6L0 24l6.2-1.6c1.7.9 3.7 1.4 5.7 1.4 6.6 0 12-5.4 12-12 0-3.3-1.3-6.3-3.4-8.3z"/></svg>
+            Compartir pendientes por WhatsApp
+          </button>
+        )}
         {data.pendientes.length === 0 ? (
           <Vacio
             icono={<svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M9 6h11M9 12h11M9 18h11M4 6l1 1 2-2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>}
@@ -1587,6 +1801,265 @@ function FormFinca({ finca, onGuardar, onCerrar }) {
   );
 }
 
+// Diálogo para elegir opciones de exportación de PDF y compartir/descargar.
+function DialogoExportar({ animales, finca, onCerrar, onResultado }) {
+  const [porPagina, setPorPagina] = React.useState(animales.length === 1 ? 1 : 2);
+  const [incluirSanidad, setIncluirSanidad] = React.useState(true);
+  const [generando, setGenerando] = React.useState(false);
+
+  const exportar = () => {
+    setGenerando(true);
+    // Pequeño delay para que el "Generando…" se vea antes del trabajo pesado.
+    setTimeout(() => {
+      generarPDFAnimales(animales, finca, { porPagina, incluirSanidad }, (blob) => {
+        const nombre = animales.length === 1
+          ? `animal-${(animales[0].chapeta || 's-n').toString().replace(/\s+/g, '')}.pdf`
+          : `animales-${finca.finca.toLowerCase().replace(/\s+/g, '-')}.pdf`;
+        compartirPDF(blob, nombre, (res) => {
+          setGenerando(false);
+          onResultado(res);
+        });
+      });
+    }, 60);
+  };
+
+  return (
+    <Hoja titulo={animales.length === 1 ? 'Exportar animal' : `Exportar ${animales.length} animales`} onCerrar={onCerrar}>
+      <p className="cf-body" style={{ marginTop: 0, marginBottom: 20, color: 'var(--ink-2)' }}>
+        Genera una ficha PDF limpia para compartir con compradores por WhatsApp.
+      </p>
+
+      {animales.length > 1 && (
+        <Campo label="Formato">
+          <div className="cf-seg">
+            <button className={'cf-seg-opt' + (porPagina === 1 ? ' active' : '')} onClick={() => setPorPagina(1)}>
+              Una ficha por hoja
+            </button>
+            <button className={'cf-seg-opt' + (porPagina === 2 ? ' active' : '')} onClick={() => setPorPagina(2)}>
+              Dos por hoja
+            </button>
+          </div>
+        </Campo>
+      )}
+
+      <Campo label="Información sanitaria">
+        <button className={'cf-seg-opt' + (incluirSanidad ? ' active' : '')} onClick={() => setIncluirSanidad(!incluirSanidad)}
+          style={{ width: '100%', justifyContent: 'flex-start', gap: 10 }}>
+          <span style={{ width: 22, height: 22, borderRadius: 4, flexShrink: 0, border: `1.5px solid ${incluirSanidad ? 'var(--paper)' : 'var(--rule)'}`, background: incluirSanidad ? 'var(--paper)' : 'transparent', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+            {incluirSanidad && <svg width="14" height="14" viewBox="0 0 16 16"><path d="M3 8l3 3 7-8" stroke="var(--ink)" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+          </span>
+          Incluir vacunas registradas
+        </button>
+      </Campo>
+
+      <button className="cf-btn" onClick={exportar} disabled={generando} style={{ marginTop: 4 }}>
+        {generando ? 'Generando…' : (
+          <React.Fragment>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4 12v6a2 2 0 002 2h12a2 2 0 002-2v-6M12 3v12M8 11l4 4 4-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            Generar y compartir PDF
+          </React.Fragment>
+        )}
+      </button>
+      <p className="cf-meta" style={{ marginTop: 12, color: 'var(--ink-3)', textAlign: 'center', lineHeight: 1.5 }}>
+        En el teléfono se abrirá el menú para compartir por WhatsApp.<br/>En computadora se descarga el archivo.
+      </p>
+    </Hoja>
+  );
+}
+
+/* ============================================================
+   GENERACIÓN DE PDF — fichas de animales para vender por WhatsApp
+   Usa jsPDF (cargada desde CDN). Diseño limpio, no corporativo.
+   ============================================================ */
+
+// Paleta de marca en RGB para jsPDF.
+const PDF_COLORES = {
+  ink: [28, 24, 20],
+  ink2: [107, 95, 78],
+  ink3: [150, 138, 118],
+  terra: [139, 58, 44],
+  paper: [244, 236, 219],
+  paperCard: [251, 246, 234],
+  rule: [212, 198, 164],
+  olive: [90, 100, 64],
+};
+
+// Genera un PDF con una o varias fichas de animales.
+// opciones: { porPagina: 1 | 2, incluirSanidad: bool }
+function generarPDFAnimales(animales, finca, opciones, callback) {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  const anchoPag = 210;
+  const altoPag = 297;
+  const margen = 16;
+  const unaPorPagina = opciones.porPagina === 1;
+
+  // Altura de cada ficha según el modo.
+  const altoFicha = unaPorPagina ? (altoPag - margen * 2) : (altoPag - margen * 2 - 8) / 2;
+
+  animales.forEach((animal, idx) => {
+    const posEnPagina = unaPorPagina ? 0 : (idx % 2);
+    if (idx > 0 && posEnPagina === 0) doc.addPage();
+
+    const y0 = margen + posEnPagina * (altoFicha + 8);
+    dibujarFicha(doc, animal, finca, opciones, margen, y0, anchoPag - margen * 2, altoFicha, unaPorPagina);
+  });
+
+  // Devuelve el PDF como Blob para compartir o descargar.
+  const blob = doc.output('blob');
+  callback(blob, doc);
+}
+
+// Dibuja una ficha individual de animal en el PDF.
+function dibujarFicha(doc, animal, finca, opciones, x, y, ancho, alto, grande) {
+  const C = PDF_COLORES;
+
+  // Marco de la ficha.
+  doc.setDrawColor(...C.rule);
+  doc.setLineWidth(0.3);
+  doc.roundedRect(x, y, ancho, alto, 3, 3, 'S');
+
+  // Cabecera: marca + finca.
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(grande ? 16 : 13);
+  doc.setTextColor(...C.terra);
+  doc.text('Novuscampo', x + 8, y + 11);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(grande ? 9 : 8);
+  doc.setTextColor(...C.ink3);
+  doc.text(`${finca.finca} · ${finca.estado}`, x + ancho - 8, y + 11, { align: 'right' });
+
+  // Línea bajo cabecera.
+  doc.setDrawColor(...C.rule);
+  doc.line(x + 8, y + 15, x + ancho - 8, y + 15);
+
+  // Zona de foto (izquierda) + datos (derecha).
+  const fotoLado = grande ? 70 : 42;
+  const fotoX = x + 8;
+  const fotoY = y + 20;
+
+  if (animal.foto) {
+    try {
+      doc.addImage(animal.foto, 'JPEG', fotoX, fotoY, fotoLado, fotoLado, undefined, 'FAST');
+    } catch (e) {
+      dibujarPlaceholderFoto(doc, fotoX, fotoY, fotoLado, C);
+    }
+  } else {
+    dibujarPlaceholderFoto(doc, fotoX, fotoY, fotoLado, C);
+  }
+
+  // Datos a la derecha de la foto.
+  const datosX = fotoX + fotoLado + 8;
+  let cursorY = fotoY + 4;
+
+  // Chapeta grande.
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(grande ? 22 : 15);
+  doc.setTextColor(...C.ink);
+  doc.text(`#${animal.chapeta || '—'}`, datosX, cursorY + 4);
+  cursorY += grande ? 11 : 8;
+
+  // Raza · sexo.
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(grande ? 13 : 10);
+  doc.setTextColor(...C.ink2);
+  doc.text(`${animal.raza} · ${animal.sexo}`, datosX, cursorY + 2);
+  cursorY += grande ? 9 : 7;
+
+  // Tabla de datos clave.
+  const datos = [
+    ['Edad', animal.edad || '—'],
+    ['Peso', animal.peso ? `${animal.peso} kg` : '—'],
+    ['Estado', animal.estado || '—'],
+  ];
+  doc.setFontSize(grande ? 10 : 8.5);
+  datos.forEach(([k, v]) => {
+    doc.setTextColor(...C.ink3);
+    doc.text(k, datosX, cursorY + 2);
+    doc.setTextColor(...C.ink);
+    doc.text(String(v), datosX + (grande ? 26 : 20), cursorY + 2);
+    cursorY += grande ? 7 : 5.5;
+  });
+
+  // Nota / observaciones (debajo de la foto si es grande, o sigue en columna).
+  let notaY = grande ? (fotoY + fotoLado + 8) : (y + alto - 22);
+  if (animal.nota) {
+    doc.setDrawColor && doc.setDrawColor(...C.rule);
+    doc.setFont('helvetica', 'italic');
+    doc.setFontSize(grande ? 10 : 8);
+    doc.setTextColor(...C.ink2);
+    const notaTexto = doc.splitTextToSize(`"${animal.nota}"`, ancho - 16);
+    doc.text(notaTexto.slice(0, grande ? 3 : 2), x + 8, notaY);
+    notaY += (grande ? 3 : 2) * (grande ? 5 : 4);
+  }
+
+  // Información sanitaria (si se pidió y hay eventos de vacuna/sanidad).
+  if (opciones.incluirSanidad) {
+    const sanitarios = (animal.eventos || []).filter(ev =>
+      ['Vacuna', 'Enfermedad'].includes(ev.tipo));
+    if (sanitarios.length > 0) {
+      const sanidadY = grande ? notaY + 4 : (y + alto - 16);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(grande ? 9 : 7.5);
+      doc.setTextColor(...C.olive);
+      doc.text('SANIDAD', x + 8, sanidadY);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(...C.ink2);
+      const ultimos = sanitarios.slice(-3).reverse();
+      let sy = sanidadY + (grande ? 5 : 4);
+      ultimos.forEach(ev => {
+        const linea = `${ev.tipo}: ${ev.detalle || '—'} (${formatoFechaCorta(ev.fecha)})`;
+        doc.text(linea, x + 8, sy);
+        sy += grande ? 5 : 4;
+      });
+    }
+  }
+
+  // Pie: fecha de generación.
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(...C.ink3);
+  doc.text(`Ficha generada ${formatoFechaCorta(hoyISO())}`, x + ancho - 8, y + alto - 5, { align: 'right' });
+}
+
+// Dibuja un recuadro gris cuando el animal no tiene foto.
+function dibujarPlaceholderFoto(doc, x, y, lado, C) {
+  doc.setFillColor(236, 225, 198);
+  doc.setDrawColor(...C.rule);
+  doc.roundedRect(x, y, lado, lado, 2, 2, 'FD');
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(...C.ink3);
+  doc.text('sin foto', x + lado / 2, y + lado / 2, { align: 'center' });
+}
+
+// Comparte el PDF: usa el menú nativo del teléfono (Web Share) si está disponible,
+// o descarga el archivo como respaldo.
+function compartirPDF(blob, nombreArchivo, onResultado) {
+  const file = new File([blob], nombreArchivo, { type: 'application/pdf' });
+
+  // Web Share API con archivos — disponible en la mayoría de teléfonos modernos.
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    navigator.share({
+      files: [file],
+      title: 'Ficha de animales · Novuscampo',
+    }).then(() => onResultado('compartido'))
+      .catch(() => onResultado('cancelado'));
+  } else {
+    // Respaldo: descargar el archivo. El productor lo adjunta manualmente.
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = nombreArchivo;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    onResultado('descargado');
+  }
+}
+
 /* ============================================================
    APP — router principal + estado global del cuaderno
    ============================================================ */
@@ -1660,6 +2133,17 @@ function App() {
 
   return (
     <div className="cf-app">
+      {errorGuardado && (
+        <div style={{
+          position: 'absolute', top: 0, left: 0, right: 0, zIndex: 300,
+          background: 'var(--crimson)', color: 'var(--paper)',
+          padding: 'calc(env(safe-area-inset-top, 0px) + 12px) 16px 12px',
+          fontFamily: 'var(--sans)', fontSize: 14, lineHeight: 1.4, textAlign: 'center',
+        }}>
+          El teléfono se quedó sin espacio. Borra fotos de animales viejos para
+          poder seguir guardando.
+        </div>
+      )}
       {contenido}
       {mostrarBarra && <BarraNav activa={tab} onCambiar={irA} />}
     </div>
