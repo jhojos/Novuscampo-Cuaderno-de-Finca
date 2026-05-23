@@ -428,7 +428,7 @@ function Cabecera({ titulo, accion }) {
 // Íconos de la barra inferior (línea simple, estilo sobrio).
 const Iconos = {
   inicio: (a) => <svg viewBox="0 0 24 24" fill="none"><path d="M3 11l9-7 9 7M5 10v9a1 1 0 001 1h12a1 1 0 001-1v-9" stroke="currentColor" strokeWidth={a ? 2 : 1.6} strokeLinecap="round" strokeLinejoin="round"/></svg>,
-  rebano: (a) => <svg viewBox="0 0 24 24" fill="none"><path d="M4 9c0-1 1-2 2-2m12 2c0-1-1-2-2-2M5 9c-1 1-1.5 3-1 5m15-5c1 1 1.5 3 1 5M7 7c0-2 2-3 5-3s5 1 5 3M8 18c0 1 1.5 2 4 2s4-1 4-2" stroke="currentColor" strokeWidth={a ? 2 : 1.6} strokeLinecap="round" strokeLinejoin="round"/><circle cx="9.5" cy="11" r="1" fill="currentColor"/><circle cx="14.5" cy="11" r="1" fill="currentColor"/></svg>,
+  rebano: (a) => <svg viewBox="0 0 24 24" fill="none"><path d="M5 4c0 2 1.2 3.5 2.8 4M19 4c0 2-1.2 3.5-2.8 4M7.8 8C6.5 8.6 5.5 10 5.5 11.8c0 3.6 2.9 6.2 6.5 6.2s6.5-2.6 6.5-6.2c0-1.8-1-3.2-2.3-3.8" stroke="currentColor" strokeWidth={a ? 2 : 1.6} strokeLinecap="round" strokeLinejoin="round"/><path d="M9.5 12.5h0M14.5 12.5h0" stroke="currentColor" strokeWidth={a ? 2.4 : 2} strokeLinecap="round"/><path d="M10 15.2c.6.5 1.3.7 2 .7s1.4-.2 2-.7" stroke="currentColor" strokeWidth={a ? 2 : 1.6} strokeLinecap="round" strokeLinejoin="round"/></svg>,
   anotar: (a) => <svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth={a ? 2.4 : 2} strokeLinecap="round"/></svg>,
   pendientes: (a) => <svg viewBox="0 0 24 24" fill="none"><path d="M9 6h11M9 12h11M9 18h11M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2" stroke="currentColor" strokeWidth={a ? 2 : 1.6} strokeLinecap="round" strokeLinejoin="round"/></svg>,
   mas: (a) => <svg viewBox="0 0 24 24" fill="none"><circle cx="5" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="19" cy="12" r="1.6" fill="currentColor"/></svg>,
@@ -660,11 +660,9 @@ function Bienvenida({ onEmpezar }) {
 function Registro({ onCrear }) {
   const [productor, setProductor] = React.useState('');
   const [finca, setFinca] = React.useState('');
-  const [estado, setEstado] = React.useState('');
 
-  const estados = ['Apure', 'Barinas', 'Guárico', 'Cojedes', 'Portuguesa', 'Zulia', 'Lara', 'Monagas', 'Anzoátegui', 'Táchira', 'Mérida', 'Trujillo', 'Falcón', 'Yaracuy', 'Carabobo', 'Bolívar', 'Otro'];
 
-  const puedeCrear = productor.trim() && finca.trim() && estado;
+  const puedeCrear = productor.trim() && finca.trim();
 
   return (
     <div className="cf-app">
@@ -685,13 +683,6 @@ function Registro({ onCrear }) {
             placeholder="Ej: Hato La Candelaria" autoComplete="off" />
         </Campo>
 
-        <Campo label="Estado / región">
-          <select className="cf-select" value={estado} onChange={e => setEstado(e.target.value)}>
-            <option value="">Seleccionar…</option>
-            {estados.map(e => <option key={e} value={e}>{e}</option>)}
-          </select>
-        </Campo>
-
         <div className="cf-notice" style={{ marginTop: 8, marginBottom: 24 }}>
           No pedimos correo ni contraseña: no hay cuentas. Tus datos se guardan en este teléfono.
         </div>
@@ -700,7 +691,7 @@ function Registro({ onCrear }) {
       <div style={{ padding: '12px 22px calc(20px + env(safe-area-inset-bottom, 0px))', borderTop: '1px solid var(--rule)', background: 'var(--paper)' }}>
         <button className="cf-btn" disabled={!puedeCrear}
           style={{ opacity: puedeCrear ? 1 : 0.5 }}
-          onClick={() => onCrear({ productor: productor.trim(), finca: finca.trim(), estado })}>
+          onClick={() => onCrear({ productor: productor.trim(), finca: finca.trim() })}>
           Crear mi cuaderno
         </button>
       </div>
@@ -768,7 +759,7 @@ function PantallaInicio({ data, onIrA }) {
       <div className="cf-scroll" style={{ padding: '20px 18px 0' }}>
         {/* Saludo real */}
         <div style={{ marginBottom: 6 }}>
-          <span className="cf-eyebrow">{data.finca.finca} · {data.finca.estado}</span>
+          <span className="cf-eyebrow">{data.finca.finca}</span>
         </div>
         <h1 className="cf-h1" style={{ marginBottom: 22 }}>Buenas, {primerNombre}</h1>
 
@@ -1404,6 +1395,20 @@ function PantallaPendientes({ data, setData }) {
    MÁS — menú que abre Sanidad, Inventario, Potreros, Ajustes
    ============================================================ */
 
+// Comparte la app del Cuaderno por WhatsApp para que otros productores la usen.
+// Usa el link público fijo de la herramienta.
+function compartirCuaderno() {
+  const link = 'https://jhojos.github.io/Novuscampo-Cuaderno-de-Finca/';
+  const texto = [
+    'Te recomiendo el Cuaderno de Finca de Novuscampo.',
+    'Lleva tu rebaño al día desde el teléfono: animales, vacunas, partos e inventario. Es gratis y fácil de usar.',
+    '',
+    link,
+  ].join('\n');
+  const url = 'https://wa.me/?text=' + encodeURIComponent(texto);
+  window.open(url, '_blank');
+}
+
 function PantallaMas({ onIrA, data }) {
   const items = [
     { id: 'sanidad', t: 'Sanidad', s: `${data.sanidad.length} medicamentos y vacunas`, ic: <path d="M9 3h6v4l4 4v9H5v-9l4-4z M9 12h6" stroke="currentColor" strokeWidth="1.6" fill="none" strokeLinejoin="round"/> },
@@ -1431,7 +1436,15 @@ function PantallaMas({ onIrA, data }) {
           ))}
         </div>
 
-        <div style={{ textAlign: 'center', marginTop: 32, opacity: 0.6 }}>
+        <button className="cf-btn cf-btn--olive" style={{ marginTop: 20 }} onClick={compartirCuaderno}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M20.5 3.5C18.3 1.3 15.3 0 12 0 5.4 0 0 5.4 0 12c0 2.1.6 4.2 1.6 6L0 24l6.2-1.6c1.7.9 3.7 1.4 5.7 1.4 6.6 0 12-5.4 12-12 0-3.3-1.3-6.3-3.4-8.3z"/></svg>
+          Compartir el Cuaderno por WhatsApp
+        </button>
+        <div className="cf-meta" style={{ textAlign: 'center', marginTop: 8, color: 'var(--ink-3)' }}>
+          Recomiéndalo a otros productores
+        </div>
+
+        <div style={{ textAlign: 'center', marginTop: 28, opacity: 0.6 }}>
           <span className="cf-diamond" style={{ fontSize: 14 }}>◆</span>
           <div className="cf-meta" style={{ marginTop: 6 }}>Novuscampo · Cuaderno de finca</div>
         </div>
@@ -1726,10 +1739,7 @@ function PantallaAjustes({ data, setData, onVolver, onReset }) {
           <span className="cf-meta">Finca</span>
           <span className="cf-body" style={{ fontWeight: 500 }}>{data.finca.finca}</span>
         </div>
-        <div className="cf-row">
-          <span className="cf-meta">Estado</span>
-          <span className="cf-body" style={{ fontWeight: 500 }}>{data.finca.estado}</span>
-        </div>
+
       </div>
       <button className="cf-btn cf-btn--ghost" style={{ marginBottom: 28 }} onClick={() => setEditFinca(true)}>Editar datos de la finca</button>
 
@@ -1784,16 +1794,10 @@ function PantallaAjustes({ data, setData, onVolver, onReset }) {
 // Formulario para editar datos de la finca.
 function FormFinca({ finca, onGuardar, onCerrar }) {
   const [f, setF] = React.useState(finca);
-  const estados = ['Apure', 'Barinas', 'Guárico', 'Cojedes', 'Portuguesa', 'Zulia', 'Lara', 'Monagas', 'Anzoátegui', 'Táchira', 'Mérida', 'Trujillo', 'Falcón', 'Yaracuy', 'Carabobo', 'Bolívar', 'Otro'];
   return (
     <Hoja titulo="Editar finca" onCerrar={onCerrar}>
       <Campo label="Tu nombre"><input className="cf-input" value={f.productor} onChange={e => setF({ ...f, productor: e.target.value })} /></Campo>
       <Campo label="Nombre de la finca"><input className="cf-input" value={f.finca} onChange={e => setF({ ...f, finca: e.target.value })} /></Campo>
-      <Campo label="Estado / región">
-        <select className="cf-select" value={f.estado} onChange={e => setF({ ...f, estado: e.target.value })}>
-          {estados.map(e => <option key={e} value={e}>{e}</option>)}
-        </select>
-      </Campo>
       <button className="cf-btn" onClick={() => onGuardar(f)}>Guardar</button>
     </Hoja>
   );
@@ -1926,7 +1930,7 @@ function dibujarFicha(doc, animal, finca, opciones, x, y, ancho, alto, grande) {
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(grande ? 9 : 8);
   doc.setTextColor(...C.ink3);
-  doc.text(`${finca.finca} · ${finca.estado}`, x + ancho - 8, y + 11, { align: 'right' });
+  doc.text(`${finca.finca}`, x + ancho - 8, y + 11, { align: 'right' });
 
   // Línea bajo cabecera.
   doc.setDrawColor(...C.rule);
